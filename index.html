@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frutue - Faça seu Pedido</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <img src="img/logo.jpg" alt="Frutue Logo" class="header-logo">
+    <h1>Frutue</h1>
+    <p>A sua opção saudável</p>
+    <button class="cart-trigger-btn" onclick="toggleCartDrawer(true)">
+      🛒 <span class="cart-badge" id="cartCount">0</span>
+    </button>
+  </header>
+
+  <!-- PAINEL DO CARRINHO LATERAL -->
+  <div class="cart-drawer-overlay" id="cartOverlay" onclick="toggleCartDrawer(false)"></div>
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h3>Seu Carrinho</h3>
+      <button class="close-modal" style="color:#fff; background:rgba(255,255,255,0.2)" onclick="toggleCartDrawer(false)">×</button>
+    </div>
+    <div class="cart-body" id="cartList"></div>
+    <div class="cart-footer">
+     <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:12px;">
+        <strong>Total do Carrinho:</strong>
+        <span style="font-weight:bold; color:var(--green-dark)" id="cartSubtotal">R$ 0,00</span>
+      </div>
+      <button class="btn-main-action" style="background:var(--orange)" onclick="toggleCartDrawer(false)">Continuar Comprando</button>
+    </div>
+  </div>
+
+  <div class="container" id="formArea">
+
+    <!-- SEÇÃO MONTE SUA SALADA -->
+    <div class="card-section">
+      <div class="section-title">
+        <h2>🍓 Salada de Frutas</h2>
+        <small>Personalizada</small>
+      </div>
+      <p style="font-size:0.85rem; color:#666; margin-top:0;">Escolha tamanhos, frutas, adicionais e coberturas do seu jeito.</p>
+      <button type="button" class="btn-main-action" onclick="abrirMontadorSalada()">
+        ➕ Monte sua Salada
+      </button>
+    </div>
+
+    <!-- SANDUÍCHES -->
+    <div class="card-section">
+      <div class="section-title">
+        <h2>🥪 Sanduíches</h2>
+        <small>Adicionar ao pedido</small>
+      </div>
+      <div class="inline-options">
+        <button type="button" class="opt" onclick="adicionarItemDireto('Sanduíche Natural', 8.00)">Natural <span class="price-tag">+ R$ 8,00</span></button>
+        <button type="button" class="opt" onclick="adicionarItemDireto('Sanduíche Banana e Nutella', 10.00)">Banana / Nutella <span class="price-tag">+ R$ 10,00</span></button>
+        <button type="button" class="opt" onclick="adicionarItemDireto('Sanduíche Banana e Doce de Leite', 10.00)">Banana / Doce Leite <span class="price-tag">+ R$ 10,00</span></button>
+        <button type="button" class="opt" onclick="adicionarItemDireto('Sanduíche Pasta de Amendoim', 10.00)">Banana / Amendoim <span class="price-tag">+ R$ 10,00</span></button>
+      </div>
+    </div>
+
+    <!-- SUCOS -->
+    <div class="card-section">
+      <div class="section-title">
+        <h2>🧃 Sucos Naturais (500ml)</h2>
+        <small>Adicionar ao pedido</small>
+      </div>
+      <div class="inline-options">
+        <button type="button" class="opt" onclick="adicionarItemDireto('Suco de Laranja', 7.00)">Laranja <span class="price-tag">+ R$ 7,00</span></button>
+        <button type="button" class="opt" onclick="adicionarItemDireto('Suco de Abacaxi c/ Hortelã', 7.00)">Abacaxi c/ Hortelã <span class="price-tag">+ R$ 7,00</span></button>
+        <button type="button" class="opt" onclick="adicionarItemDireto('Suco de Morango', 7.00)">Morango <span class="price-tag">+ R$ 7,00</span></button>
+        <button type="button" class="opt" onclick="adicionarItemDireto('Suco de Maracujá', 7.00)">Maracujá <span class="price-tag">+ R$ 7,00</span></button>
+      </div>
+    </div>
+
+    <!-- DADOS DE ENTREGA -->
+    <div class="card-section">
+      <div class="section-title">
+        <h2>📍 Dados de Entrega</h2>
+      </div>
+      <div class="field">
+        <label for="nomeInput">Nome completo</label>
+        <input type="text" id="nomeInput" placeholder="Ex: Maria Silva">
+      </div>
+      <div class="field">
+        <label for="telefoneInput">Telefone / WhatsApp</label>
+        <input type="text" id="telefoneInput" placeholder="Ex: (86) 99999-9999">
+      </div>
+      <div class="field">
+        <label for="enderecoInput">Endereço de entrega (rua, número, bairro)</label>
+        <input type="text" id="enderecoInput" placeholder="Ex: Rua das Flores, 123, Centro">
+      </div>
+      <div class="field">
+        <label for="pagamentoSelect">Forma de pagamento</label>
+        <select id="pagamentoSelect">
+          <option value="Pix">Pix</option>
+          <option value="Dinheiro">Dinheiro</option>
+          <option value="Cartão">Cartão (débito/crédito na entrega)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="observacaoInput">Observações gerais</label>
+        <textarea id="observacaoInput" rows="2" maxlength="300" placeholder="Ex: Campainha quebrada, entregar na portaria..."></textarea>
+      </div>
+      <div class="msg-erro" id="erroDados">Preencha nome, endereço e adicione pelo menos um item ao carrinho.</div>
+    </div>
+
+  </div>
+
+  <!-- BARRA INFERIOR DE TOTAL -->
+  <div class="total-bar">
+    <div>
+      <span style="font-size:0.8rem; color:#666">Total do pedido</span><br>
+      <span class="valor" id="totalValorBarra">R$ 0,00</span>
+    </div>
+    <button class="btn-checkout" onclick="gerarPedido()">Finalizar Pedido</button>
+  </div>
+
+  <!-- MODAL CONSTRUTOR DE SALADA -->
+  <div class="modal" id="saladaModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>🍓 Montar Salada de Frutas</h3>
+        <button type="button" class="close-modal" onclick="fecharSaladaModal()">×</button>
+      </div>
+
+      <div class="builder-grid">
+        <button type="button" class="builder-btn" onclick="abrirSubModal('copoSubModal')">
+          🥤 Copo <small id="lblCopo">Escolher tamanho *</small>
+        </button>
+        <button type="button" class="builder-btn" onclick="abrirSubModal('frutaSubModal')">
+          🍓 Frutas <small id="lblFrutas">Escolher frutas *</small>
+        </button>
+        <button type="button" class="builder-btn" onclick="abrirSubModal('adicionalSubModal')">
+          🥣 Adicionais <small id="lblAdicionais">Opcional</small>
+        </button>
+        <button type="button" class="builder-btn" onclick="abrirSubModal('coberturaSubModal')">
+          🍯 Cobertura <small id="lblCobertura">Opcional</small>
+        </button>
+      </div>
+
+      <div class="modal-qty-bar">
+        <span style="font-size:0.9rem; font-weight:600;">Quantidade desta salada:</span>
+        <div class="qty-control">
+          <button type="button" class="qty-btn" onclick="alterarQtdMontador(-1)">-</button>
+          <span class="qty-val" id="montadorQtdVal">1</span>
+          <button type="button" class="qty-btn" onclick="alterarQtdMontador(1)">+</button>
+        </div>
+      </div>
+
+      <div class="msg-erro" id="erroMontador" style="margin-bottom:10px;">Selecione o tamanho do copo e pelo menos uma fruta.</div>
+
+      <button type="button" class="btn-main-action" onclick="confirmarSaladaEAdicionar()">
+        Adicionar Salada ao Carrinho
+      </button>
+    </div>
+  </div>
+
+  <!-- SUB-MODAIS DE SELEÇÃO DA SALADA -->
+  <div class="modal" id="copoSubModal">
+    <div class="modal-box">
+      <div class="modal-head"><h3>🥤 Escolha o Tamanho</h3><button class="close-modal" onclick="fecharSubModal('copoSubModal')">×</button></div>
+      <div class="options-grid">
+        <label class="opt"><input type="radio" name="tempCopo" value="250|12" onchange="atualizarLabelsSalada()"> 250ml <span class="price-tag">R$ 12,00</span></label>
+        <label class="opt"><input type="radio" name="tempCopo" value="400|16" onchange="atualizarLabelsSalada()"> 400ml <span class="price-tag">R$ 16,00</span></label>
+        <label class="opt"><input type="radio" name="tempCopo" value="500|20" onchange="atualizarLabelsSalada()"> 500ml <span class="price-tag">R$ 20,00</span></label>
+      </div>
+      <button class="btn-main-action" onclick="fecharSubModal('copoSubModal')">Ok</button>
+    </div>
+  </div>
+
+  <div class="modal" id="frutaSubModal">
+    <div class="modal-box">
+      <div class="modal-head"><h3>🍓 Escolha as Frutas</h3><button class="close-modal" onclick="fecharSubModal('frutaSubModal')">×</button></div>
+      <div class="options-grid" id="frutasContainer">
+        <label class="opt"><input type="checkbox" value="Morango" onchange="atualizarLabelsSalada()"> Morango 🍓</label>
+        <label class="opt"><input type="checkbox" value="Banana" onchange="atualizarLabelsSalada()"> Banana 🍌</label>
+        <label class="opt"><input type="checkbox" value="Maçã" onchange="atualizarLabelsSalada()"> Maçã 🍎</label>
+        <label class="opt"><input type="checkbox" value="Uva" onchange="atualizarLabelsSalada()"> Uva 🍇</label>
+        <label class="opt"><input type="checkbox" value="Kiwi" onchange="atualizarLabelsSalada()"> Kiwi 🥝</label>
+        <label class="opt"><input type="checkbox" value="Manga" onchange="atualizarLabelsSalada()"> Manga 🥭</label>
+        <label class="opt"><input type="checkbox" value="Abacaxi" onchange="atualizarLabelsSalada()"> Abacaxi 🍍</label>
+        <label class="opt"><input type="checkbox" value="Mamão" onchange="atualizarLabelsSalada()"> Mamão 🍑</label>
+        <label class="opt"><input type="checkbox" value="Melancia" onchange="atualizarLabelsSalada()"> Melancia 🍉</label>
+        <label class="opt"><input type="checkbox" value="Melão" onchange="atualizarLabelsSalada()"> Melão 🍈</label>
+      </div>
+      <button class="btn-main-action" onclick="fecharSubModal('frutaSubModal')">Ok</button>
+    </div>
+  </div>
+
+  <div class="modal" id="adicionalSubModal">
+    <div class="modal-box">
+      <div class="modal-head"><h3>🥣 Adicionais</h3><button class="close-modal" onclick="fecharSubModal('adicionalSubModal')">×</button></div>
+      <div class="options-grid" id="adicionaisContainer">
+        <label class="opt"><input type="checkbox" value="Chia" data-preco="2" onchange="atualizarLabelsSalada()"> Chia <span class="price-tag">+R$ 2,00</span></label>
+        <label class="opt"><input type="checkbox" value="Granola" data-preco="2" onchange="atualizarLabelsSalada()"> Granola <span class="price-tag">+R$ 2,00</span></label>
+        <label class="opt"><input type="checkbox" value="Aveia" data-preco="2" onchange="atualizarLabelsSalada()"> Aveia <span class="price-tag">+R$ 2,00</span></label>
+        <label class="opt"><input type="checkbox" value="Castanhas" data-preco="3" onchange="atualizarLabelsSalada()"> Castanhas <span class="price-tag">+R$ 3,00</span></label>
+      </div>
+      <button class="btn-main-action" onclick="fecharSubModal('adicionalSubModal')">Ok</button>
+    </div>
+  </div>
+
+  <div class="modal" id="coberturaSubModal">
+    <div class="modal-box">
+      <div class="modal-head"><h3>🍯 Cobertura</h3><button class="close-modal" onclick="fecharSubModal('coberturaSubModal')">×</button></div>
+      <div class="options-grid">
+        <label class="opt"><input type="radio" name="tempCobertura" value="Nenhuma|0" checked onchange="atualizarLabelsSalada()"> Nenhuma</label>
+        <label class="opt"><input type="radio" name="tempCobertura" value="Creme de leite Ninho|3" onchange="atualizarLabelsSalada()"> Creme de leite Ninho <span class="price-tag">+R$ 3,00</span></label>
+        <label class="opt"><input type="radio" name="tempCobertura" value="Iogurte integral|2.5" onchange="atualizarLabelsSalada()"> Iogurte integral <span class="price-tag">+R$ 2,50</span></label>
+        <label class="opt"><input type="radio" name="tempCobertura" value="Iogurte c/ doce de leite|3.5" onchange="atualizarLabelsSalada()"> Iogurte c/ doce de leite <span class="price-tag">+R$ 3,50</span></label>
+      </div>
+      <button class="btn-main-action" onclick="fecharSubModal('coberturaSubModal')">Ok</button>
+    </div>
+  </div>
+
+  <!-- TELA FINAL DE RESULTADO/RESUMO -->
+  <div id="resultado">
+    <div class="resumo-box" id="resumoTexto"></div>
+    <div class="acoes">
+      <button class="btn-whats" id="btnWhats">Enviar no WhatsApp</button>
+      <button class="btn-voltar" onclick="voltar()">Editar pedido</button>
+    </div>
+    <div class="qr-box" id="qrArea"></div>
+  </div>
+  <p class="envio-status" id="envioStatus"></p>
+
+  <script src="app.js"></script>
+  <script src="pedidos.js"></script>
+</body>
+</html>
