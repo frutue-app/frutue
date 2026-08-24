@@ -12,7 +12,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', Verdana, sans-serif;
-  background-image: url('../img/fundo.jpg');
+  background-image: url('img/fundo.jpg');
   color: var(--text);
   padding-bottom: 80px;
 }
