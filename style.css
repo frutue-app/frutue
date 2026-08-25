@@ -9,10 +9,21 @@
   --white: #ffffff;
 }
 * { box-sizing: border-box; }
+html {
+  min-height: 100%;
+}
 body {
   margin: 0;
+  min-height: 100vh;
   font-family: 'Segoe UI', Verdana, sans-serif;
+  background-color: var(--cream);
   background-image: url('img/fundo.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: top center;
+  /* "fixed" não é confiável em navegadores mobile (Safari/Chrome Android) e
+     é a causa mais comum do fundo "sumir" em celulares */
+  background-attachment: scroll;
   color: var(--text);
   padding-bottom: 80px;
 }
@@ -114,16 +125,23 @@ header p { margin: 0; opacity: .9; font-size: .9rem; }
 .inline-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-auto-rows: 1fr;
+  align-items: stretch;
   gap: 8px;
 }
 button.opt {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 8px;
+  height: 100%;
+  min-height: 60px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 10px;
+  padding: 10px 12px;
   font-size: .87rem;
+  line-height: 1.25;
   background: #fff;
   color: var(--text);
   cursor: pointer;
@@ -131,7 +149,7 @@ button.opt {
   transition: .15s;
 }
 button.opt:hover { border-color: var(--green); background: #F2FBF1; }
-.price-tag { margin-left: auto; font-size: .78rem; color: var(--orange); font-weight: 600; }
+.price-tag { align-self: flex-end; font-size: .78rem; color: var(--orange); font-weight: 600; white-space: nowrap; }
 
 .modal {
   position: fixed; inset: 0; background: rgba(38,29,24,.52);
