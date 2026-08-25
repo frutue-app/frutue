@@ -1,179 +1,162 @@
-// ===================== MONTAGEM DO RESUMO =====================
+// pedidos.js — depende das variáveis/funções globais definidas em app.js
+// (CONFIG, carrinho, atualizarCarrinhoUI, etc.)
 
-function montarDadosPedido() {
+function gerarPedido() {
   const nome = document.getElementById('nomeInput').value.trim();
+  const telefone = document.getElementById('telefoneInput').value.trim();
   const endereco = document.getElementById('enderecoInput').value.trim();
-  const telefone = document.getElementById('telefoneInput') ? document.getElementById('telefoneInput').value.trim() : '';
+  const localizacao = document.getElementById('localizacaoHidden').value;
   const pagamento = document.getElementById('pagamentoSelect').value;
-  const observacao = document.getElementById('observacaoInput').value.trim();
+  const obs = document.getElementById('observacaoInput').value.trim();
 
-  if (carrinho.length === 0 || !nome || !endereco) {
+  if (!nome || !endereco || carrinho.length === 0) {
     document.getElementById('erroDados').style.display = 'block';
-    return null;
+    return;
   }
   document.getElementById('erroDados').style.display = 'none';
 
-  let total = 0;
-  const itens = carrinho.map(item => {
-    const subtotalItem = item.precoUnitario * item.qtd;
-    total += subtotalItem;
-    return {
-      produto: item.nome,
-      detalhes: item.detalhes || '',
-      quantidade: item.qtd,
-      preco_unitario: item.precoUnitario,
-      subtotal: subtotalItem
-    };
-  });
-
-  return { nome, endereco, telefone, pagamento, observacao, itens, total };
-}
-
-function montarTextoWhatsapp(dados) {
-  let texto = `*NOVO PEDIDO - FRUTUE*\n\n`;
-  texto += `Cliente: ${dados.nome}\n`;
-  texto += `Endereço: ${dados.endereco}\n`;
-  texto += `Pagamento: ${dados.pagamento}\n\n`;
-  texto += `*ITENS DO PEDIDO:*\n`;
-
-  dados.itens.forEach((item, idx) => {
-    texto += `\n${idx + 1}. *${item.quantidade}x ${item.produto}* - R$ ${item.subtotal.toFixed(2).replace('.', ',')}\n`;
+  let subtotal = 0;
+  let itensTexto = '';
+  carrinho.forEach(item => {
+    const totalItem = item.precoUnitario * item.qtd;
+    subtotal += totalItem;
+    itensTexto += `• ${item.qtd}x ${item.nome} - R$ ${totalItem.toFixed(2).replace('.', ',')}\n`;
     if (item.detalhes) {
-      const detFormatado = item.detalhes.replace(/<br>/g, '\n   ');
-      texto += `   ${detFormatado}\n`;
+      itensTexto += `   ${item.detalhes.replace(/<br>/g, ' | ')}\n`;
     }
   });
 
-  if (dados.observacao) texto += `\n📝 Observações: ${dados.observacao}\n`;
-  texto += `\n*TOTAL: R$ ${dados.total.toFixed(2).replace('.', ',')}*`;
-  return texto;
-}
+  let resumo = `🛒 *Novo Pedido - Frutue*\n\n`;
+  resumo += `👤 Nome: ${nome}\n`;
+  if (telefone) resumo += `📞 Telefone: ${telefone}\n`;
+  resumo += `📍 Endereço: ${endereco}\n`;
+  if (localizacao) resumo += `🗺️ Localização GPS: ${localizacao}\n`;
+  resumo += `💳 Pagamento: ${pagamento}\n`;
+  if (obs) resumo += `📝 Observações: ${obs}\n`;
+  resumo += `\n🧾 Itens:\n${itensTexto}`;
+  resumo += `\n💰 *Total: R$ ${subtotal.toFixed(2).replace('.', ',')}*`;
 
-// ===================== ENVIO PARA O BACKEND (Google Apps Script) =====================
-
-async function enviarPedidoParaAPI(dados) {
-  if (!CONFIG.apiUrl || CONFIG.apiUrl.indexOf('http') !== 0) {
-    console.warn('apiUrl não configurada em app.js - pedido não foi registrado na planilha.');
-    return { ok: false, error: 'apiUrl não configurada' };
-  }
-
-  const payload = {
-    action: 'criarPedido',
-    pedido: {
-      cliente: dados.nome,
-      endereco: dados.endereco,
-      telefone: dados.telefone,
-      forma_pagamento: dados.pagamento,
-      observacao: dados.observacao,
-      subtotal: dados.total,
-      desconto: 0,
-      taxa_entrega: 0,
-      total: dados.total,
-      itens: dados.itens
-    }
-  };
-
-  try {
-    // Content-Type text/plain evita o preflight CORS (Apps Script não responde bem a OPTIONS)
-    const resposta = await fetch(CONFIG.apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    });
-    return await resposta.json();
-  } catch (err) {
-    console.error('Erro ao enviar pedido para a API:', err);
-    return { ok: false, error: err.message };
-  }
-}
-
-// ===================== FINALIZAR PEDIDO (fluxo principal) =====================
-
-async function gerarPedido() {
-  const dados = montarDadosPedido();
-  if (!dados) return;
-
-  const btn = document.querySelector('.btn-checkout');
-  const statusEl = document.getElementById('envioStatus');
-  if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
-  if (statusEl) statusEl.textContent = 'Registrando pedido...';
-
-  // 1) Tenta registrar na planilha (não bloqueia o WhatsApp/Pix se falhar)
-  const respostaApi = await enviarPedidoParaAPI(dados);
-
-  if (statusEl) {
-    statusEl.textContent = respostaApi.ok
-      ? '✅ Pedido registrado no sistema.'
-      : '⚠️ Não foi possível registrar automaticamente, mas você ainda pode enviar pelo WhatsApp.';
-  }
-  if (btn) { btn.disabled = false; btn.textContent = 'Finalizar Pedido'; }
-
-  const textoWhats = montarTextoWhatsapp(dados);
-
-  // 2) Continua o fluxo normal (tela de resumo, WhatsApp, Pix)
+  // Mostra a tela final e esconde o formulário
+  document.getElementById('resumoTexto').textContent = resumo;
   document.getElementById('formArea').style.display = 'none';
   document.querySelector('.total-bar').style.display = 'none';
   document.getElementById('resultado').style.display = 'block';
-  document.getElementById('resumoTexto').textContent = textoWhats;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  document.getElementById('btnWhats').onclick = () => {
-    const url = `https://wa.me/${CONFIG.whatsappNumero}?text=${encodeURIComponent(textoWhats)}`;
-    window.open(url, '_blank');
-  };
+  // Botão do WhatsApp
+  const mensagemWhats = encodeURIComponent(resumo);
+  const linkWhats = `https://wa.me/${CONFIG.whatsappNumero}?text=${mensagemWhats}`;
+  document.getElementById('btnWhats').onclick = () => window.open(linkWhats, '_blank');
 
+  // QR Code (Pix)
   const qrArea = document.getElementById('qrArea');
   qrArea.innerHTML = '';
-  if (dados.pagamento === 'Pix') {
-    const payload = gerarPayloadPix(CONFIG.pixChave, CONFIG.pixNomeRecebedor, CONFIG.pixCidade, dados.total);
-    qrArea.innerHTML = `<h2 style="margin:0 0 4px;font-size:1rem;color:var(--green-dark);">Pague com Pix</h2>
-      <div id="qrcode"></div>
-      <p style="font-size:0.8rem; color:#666">Escaneie o QR Code no app do seu banco</p>
-      <div class="pix-code">${payload}</div>
-      <p style="font-size:0.8rem; color:#666">Ou copie o código acima (Pix Copia e Cola)</p>`;
-    new QRCode(document.getElementById('qrcode'), { text: payload, width: 200, height: 200 });
-  } else {
-    qrArea.innerHTML = `<p style="font-size:.9rem;">Pagamento via <b>${dados.pagamento}</b> na entrega do pedido.</p>`;
+  if (pagamento === 'Pix') {
+    qrArea.style.display = 'flex';
+    qrArea.style.flexDirection = 'column';
+    qrArea.style.alignItems = 'center';
+    qrArea.style.textAlign = 'center';
+
+    const aviso = document.createElement('p');
+    aviso.style.marginBottom = '8px';
+    aviso.style.fontSize = '0.85rem';
+    aviso.textContent = `Chave Pix (copia e cola): ${CONFIG.pixChave} — ${CONFIG.pixNomeRecebedor}`;
+    qrArea.appendChild(aviso);
+
+    const qrDiv = document.createElement('div');
+    qrDiv.id = 'qrcodeCanvas';
+    qrArea.appendChild(qrDiv);
+
+    new QRCode(qrDiv, {
+      text: CONFIG.pixChave,
+      width: 180,
+      height: 180
+    });
+
+    const btnCopiar = document.createElement('button');
+    btnCopiar.type = 'button';
+    btnCopiar.className = 'btn-secondary';
+    btnCopiar.style.marginTop = '12px';
+    btnCopiar.style.maxWidth = '220px';
+    btnCopiar.textContent = '📋 Copiar Chave Pix';
+    btnCopiar.onclick = () => copiarChavePix(btnCopiar);
+    qrArea.appendChild(btnCopiar);
   }
+
+  // Envia para a planilha (Google Apps Script)
+  enviarPedidoAPI({
+    cliente: nome,
+    telefone: telefone,
+    endereco: localizacao ? `${endereco} (GPS: ${localizacao})` : endereco,
+    pagamento: pagamento,
+    observacao: obs,
+    total: subtotal,
+    itens: carrinho.map(item => ({
+      produto: item.nome,
+      quantidade: item.qtd,
+      detalhes: item.detalhes ? item.detalhes.replace(/<br>/g, ' | ') : ''
+    }))
+  });
+}
+
+function copiarChavePix(botao) {
+  const chave = CONFIG.pixChave;
+  const textoOriginal = botao.textContent;
+
+  const marcarSucesso = () => {
+    botao.textContent = '✅ Chave copiada!';
+    setTimeout(() => { botao.textContent = textoOriginal; }, 2000);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(chave).then(marcarSucesso).catch(() => {
+      copiarChavePixFallback(chave, marcarSucesso);
+    });
+  } else {
+    copiarChavePixFallback(chave, marcarSucesso);
+  }
+}
+
+function copiarChavePixFallback(texto, onSucesso) {
+  const input = document.createElement('textarea');
+  input.value = texto;
+  input.style.position = 'fixed';
+  input.style.opacity = '0';
+  document.body.appendChild(input);
+  input.focus();
+  input.select();
+  try {
+    document.execCommand('copy');
+    onSucesso();
+  } catch (err) {
+    console.error(err);
+    alert('Não foi possível copiar automaticamente. Chave Pix: ' + texto);
+  }
+  document.body.removeChild(input);
 }
 
 function voltar() {
-  document.getElementById('formArea').style.display = 'block';
-  document.querySelector('.total-bar').style.display = 'flex';
   document.getElementById('resultado').style.display = 'none';
+  document.getElementById('formArea').style.display = '';
+  document.querySelector('.total-bar').style.display = '';
+  document.getElementById('envioStatus').textContent = '';
 }
 
-// ===================== PAYLOAD PIX (inalterado) =====================
+function enviarPedidoAPI(pedido) {
+  const status = document.getElementById('envioStatus');
+  if (!CONFIG.apiUrl) return;
 
-function crc16(payload) {
-  let crc = 0xFFFF;
-  for (let i = 0; i < payload.length; i++) {
-    crc ^= payload.charCodeAt(i) << 8;
-    for (let j = 0; j < 8; j++) {
-      crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
-      crc &= 0xFFFF;
-    }
-  }
-  return crc.toString(16).toUpperCase().padStart(4, '0');
-}
-function emv(id, value) {
-  const len = value.length.toString().padStart(2, '0');
-  return `${id}${len}${value}`;
-}
-function gerarPayloadPix(chave, nome, cidade, valor) {
-  nome = nome.substring(0, 25);
-  cidade = cidade.substring(0, 15);
-  const merchantAccount = emv('00', 'br.gov.bcb.pix') + emv('01', chave);
-  let payload =
-    emv('00', '01') +
-    emv('26', merchantAccount) +
-    emv('52', '0000') +
-    emv('53', '986') +
-    emv('54', valor.toFixed(2)) +
-    emv('58', 'BR') +
-    emv('59', nome) +
-    emv('60', cidade) +
-    emv('62', emv('05', 'PEDIDO'));
-  payload += '6304';
-  payload += crc16(payload);
-  return payload;
+  status.textContent = '⏳ Enviando pedido...';
+  fetch(CONFIG.apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(pedido)
+  })
+    .then(() => {
+      status.textContent = '✅ Pedido registrado com sucesso!';
+    })
+    .catch(err => {
+      console.error(err);
+      status.textContent = '⚠️ Pedido gerado normalmente, mas não foi possível registrar no sistema. Envie pelo WhatsApp mesmo assim.';
+    });
 }
