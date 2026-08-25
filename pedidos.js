@@ -1,6 +1,10 @@
 // pedidos.js — depende das variáveis/funções globais definidas em app.js
 // (CONFIG, carrinho, atualizarCarrinhoUI, etc.)
 
+// Guarda o ID do pedido já registrado, para que reenvios (após "Editar pedido")
+// atualizem a mesma linha na planilha em vez de criar uma nova.
+let pedidoAtualId = null;
+
 function gerarPedido() {
   const nome = document.getElementById('nomeInput').value.trim();
   const telefone = document.getElementById('telefoneInput').value.trim();
@@ -84,7 +88,10 @@ function gerarPedido() {
   }
 
   // Envia para a planilha (Google Apps Script)
+  // Se já existe um pedidoAtualId (ex.: usuário clicou em "Editar pedido" e
+  // está finalizando de novo), ele é reenviado para ATUALIZAR a mesma linha.
   enviarPedidoAPI({
+    id_pedido: pedidoAtualId,
     cliente: nome,
     telefone: telefone,
     endereco: localizacao ? `${endereco} (GPS: ${localizacao})` : endereco,
@@ -152,7 +159,11 @@ function enviarPedidoAPI(pedido) {
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(pedido)
   })
-    .then(() => {
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.id_pedido) {
+        pedidoAtualId = data.id_pedido;
+      }
       status.textContent = '✅ Pedido registrado com sucesso!';
     })
     .catch(err => {
