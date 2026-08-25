@@ -100,33 +100,13 @@ function abrirMontadorSalada() {
 
   document.querySelectorAll('#saladaModal input[type="radio"]').forEach(r => r.checked = false);
   document.querySelectorAll('#saladaModal input[type="checkbox"]').forEach(c => c.checked = false);
-  const defaultCobertura = document.querySelector('input[name="tempCobertura"][value="Nenhuma|0"]');
-  if (defaultCobertura) defaultCobertura.checked = true;
+
+  const defaultGourmet = document.querySelector('input[name="tempGourmet"][value="Nenhuma|0"]');
+  if (defaultGourmet) defaultGourmet.checked = true;
 
   atualizarLabelsSalada();
   document.getElementById('erroMontador').style.display = 'none';
   document.getElementById('saladaModal').classList.add('show');
-
-  // Dentro de abrirMontadorSalada():
-const defaultGourmet = document.querySelector('input[name="tempGourmet"][value="Nenhuma|0"]');
-if (defaultGourmet) defaultGourmet.checked = true;
-
-// Em atualizarLabelsSalada():
-function atualizarLabelsSalada() {
-  const copoChecked = document.querySelector('input[name="tempCopo"]:checked');
-  const frutasChecked = [...document.querySelectorAll('#frutasContainer input:checked')].map(f => f.value);
-  const adicionaisChecked = [...document.querySelectorAll('#adicionaisContainer input:checked')].map(a => a.value);
-  const gourmetChecked = document.querySelector('input[name="tempGourmet"]:checked');
-
-  document.getElementById('lblCopo').textContent = copoChecked ? copoChecked.value.split('|')[0] + 'ml' : 'Escolher tamanho *';
-  document.getElementById('lblFrutas').textContent = frutasChecked.length ? frutasChecked.join(', ') : 'Escolher frutas *';
-  document.getElementById('lblAdicionais').textContent = adicionaisChecked.length ? adicionaisChecked.join(', ') : 'Opcional';
-  
-  const lblGourmet = document.getElementById('lblGourmet');
-  if (lblGourmet) {
-    lblGourmet.textContent = gourmetChecked ? gourmetChecked.value.split('|')[0] : 'Opcional';
-  }
-}
 }
 
 function fecharSaladaModal() {
@@ -142,88 +122,87 @@ function alterarQtdMontador(delta) {
 function abrirSubModal(id) { document.getElementById(id).classList.add('show'); }
 function fecharSubModal(id) { document.getElementById(id).classList.remove('show'); }
 
+// A Salada Gourmet é uma categoria separada dos Adicionais (não pode combinar as duas)
+// e, quando escolhida, só aceita os copos de 400ml ou 500ml (250ml fica indisponível).
 function atualizarLabelsSalada() {
+  const gourmetChecked = document.querySelector('input[name="tempGourmet"]:checked');
+  const isGourmet = !!gourmetChecked && gourmetChecked.value.split('|')[0] !== 'Nenhuma';
+
+  // Bloqueia/desbloqueia o copo de 250ml conforme a escolha do Gourmet
+  const copo250 = document.querySelector('input[name="tempCopo"][value^="250|"]');
+  if (copo250) {
+    copo250.disabled = isGourmet;
+    if (isGourmet && copo250.checked) copo250.checked = false;
+    const copo250Label = copo250.closest('label');
+    if (copo250Label) copo250Label.style.opacity = isGourmet ? '0.4' : '1';
+  }
+
+  // Bloqueia/desbloqueia os Adicionais conforme a escolha do Gourmet
+  document.querySelectorAll('#adicionaisContainer input[type="checkbox"]').forEach(chk => {
+    chk.disabled = isGourmet;
+    if (isGourmet && chk.checked) chk.checked = false;
+    const lbl = chk.closest('label');
+    if (lbl) lbl.style.opacity = isGourmet ? '0.4' : '1';
+  });
+
   const copoChecked = document.querySelector('input[name="tempCopo"]:checked');
   const frutasChecked = [...document.querySelectorAll('#frutasContainer input:checked')].map(f => f.value);
   const adicionaisChecked = [...document.querySelectorAll('#adicionaisContainer input:checked')].map(a => a.value);
-  const coberturaChecked = document.querySelector('input[name="tempCobertura"]:checked');
 
-  document.getElementById('lblCopo').textContent = copoChecked ? copoChecked.value.split('|')[0] + 'ml' : 'Escolher tamanho *';
+  document.getElementById('lblCopo').textContent = copoChecked
+    ? copoChecked.value.split('|')[0] + 'ml'
+    : (isGourmet ? 'Escolher 400 ou 500ml *' : 'Escolher tamanho *');
+
   document.getElementById('lblFrutas').textContent = frutasChecked.length ? frutasChecked.join(', ') : 'Escolher frutas *';
-  document.getElementById('lblAdicionais').textContent = adicionaisChecked.length ? adicionaisChecked.join(', ') : 'Opcional';
-  document.getElementById('lblCobertura').textContent = coberturaChecked ? coberturaChecked.value.split('|')[0] : 'Opcional';
+
+  document.getElementById('lblAdicionais').textContent = isGourmet
+    ? 'Indisponível com Gourmet'
+    : (adicionaisChecked.length ? adicionaisChecked.join(', ') : 'Opcional');
+
+  const lblGourmet = document.getElementById('lblGourmet');
+  if (lblGourmet) {
+    lblGourmet.textContent = gourmetChecked ? gourmetChecked.value.split('|')[0] : 'Opcional';
+  }
 }
 
 function confirmarSaladaEAdicionar() {
   const copoSel = document.querySelector('input[name="tempCopo"]:checked');
   const frutasSel = [...document.querySelectorAll('#frutasContainer input:checked')].map(f => f.value);
-
-  if (!copoSel || frutasSel.length === 0) {
-    document.getElementById('erroMontador').style.display = 'block';
-    return;
-  }
-
-  document.getElementById('erroMontador').style.display = 'none';
-
-  let precoUnitario = parseFloat(copoSel.value.split('|')[1]);
-  const tamanho = copoSel.value.split('|')[0] + 'ml';
-
-  const adicionaisNodes = [...document.querySelectorAll('#adicionaisContainer input:checked')];
-  let adicionaisNomes = [];
-  adicionaisNodes.forEach(node => {
-    precoUnitario += parseFloat(node.dataset.preco);
-    adicionaisNomes.push(node.value);
-  });
-
-  const coberturaSel = document.querySelector('input[name="tempCobertura"]:checked');
-  let coberturaNome = "Nenhuma";
-  if (coberturaSel) {
-    const parts = coberturaSel.value.split('|');
-    coberturaNome = parts[0];
-    precoUnitario += parseFloat(parts[1]);
-  }
-
-  let detalheTexto = `Frutas: ${frutasSel.join(', ')}`;
-  if (adicionaisNomes.length) detalheTexto += `<br>Adicionais: ${adicionaisNomes.join(', ')}`;
-  if (coberturaNome !== "Nenhuma") detalheTexto += `<br>Cobertura: ${coberturaNome}`;
-
-  carrinho.push({
-    id: Date.now(),
-    nome: `Salada de Frutas (${tamanho})`,
-    detalhes: detalheTexto,
-    precoUnitario: precoUnitario,
-    qtd: montadorQtd
-  });
-
-  atualizarCarrinhoUI();
-  fecharSaladaModal();
-  toggleCartDrawer(true);
-}
-function confirmarSaladaEAdicionar() {
-  const copoSel = document.querySelector('input[name="tempCopo"]:checked');
-  const frutasSel = [...document.querySelectorAll('#frutasContainer input:checked')].map(f => f.value);
-
-  if (!copoSel || frutasSel.length === 0) {
-    document.getElementById('erroMontador').style.display = 'block';
-    return;
-  }
-
-  document.getElementById('erroMontador').style.display = 'none';
-
-  let precoUnitario = parseFloat(copoSel.value.split('|')[1]);
-  const tamanho = copoSel.value.split('|')[0] + 'ml';
-
-  const adicionaisNodes = [...document.querySelectorAll('#adicionaisContainer input:checked')];
-  let adicionaisNomes = [];
-  adicionaisNodes.forEach(node => {
-    precoUnitario += parseFloat(node.dataset.preco);
-    adicionaisNomes.push(node.value);
-  });
-
-  // Leitura da opção Gourmet
   const gourmetSel = document.querySelector('input[name="tempGourmet"]:checked');
-  let gourmetNome = "Nenhuma";
-  if (gourmetSel) {
+  const isGourmet = !!gourmetSel && gourmetSel.value.split('|')[0] !== 'Nenhuma';
+  const tamanhoSel = copoSel ? copoSel.value.split('|')[0] : null;
+
+  const erroEl = document.getElementById('erroMontador');
+
+  if (!copoSel || frutasSel.length === 0) {
+    erroEl.textContent = 'Selecione o tamanho do copo e pelo menos uma fruta.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  if (isGourmet && tamanhoSel === '250') {
+    erroEl.textContent = 'Salada Gourmet só está disponível nos tamanhos 400ml ou 500ml.';
+    erroEl.style.display = 'block';
+    return;
+  }
+
+  erroEl.style.display = 'none';
+
+  let precoUnitario = parseFloat(copoSel.value.split('|')[1]);
+  const tamanho = tamanhoSel + 'ml';
+
+  // Adicionais não se aplicam quando a Salada Gourmet é escolhida
+  let adicionaisNomes = [];
+  if (!isGourmet) {
+    const adicionaisNodes = [...document.querySelectorAll('#adicionaisContainer input:checked')];
+    adicionaisNodes.forEach(node => {
+      precoUnitario += parseFloat(node.dataset.preco);
+      adicionaisNomes.push(node.value);
+    });
+  }
+
+  let gourmetNome = 'Nenhuma';
+  if (isGourmet) {
     const parts = gourmetSel.value.split('|');
     gourmetNome = parts[0];
     precoUnitario += parseFloat(parts[1]);
@@ -231,7 +210,7 @@ function confirmarSaladaEAdicionar() {
 
   let detalheTexto = `Frutas: ${frutasSel.join(', ')}`;
   if (adicionaisNomes.length) detalheTexto += `<br>Adicionais: ${adicionaisNomes.join(', ')}`;
-  if (gourmetNome !== "Nenhuma") detalheTexto += `<br>Gourmet: ${gourmetNome}`;
+  if (gourmetNome !== 'Nenhuma') detalheTexto += `<br>Gourmet: ${gourmetNome}`;
 
   carrinho.push({
     id: Date.now(),
