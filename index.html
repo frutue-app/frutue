@@ -138,8 +138,8 @@
         <button type="button" class="builder-btn" onclick="abrirSubModal('adicionalSubModal')">
           🥣 Adicionais <small id="lblAdicionais">Opcional</small>
         </button>
-        <button type="button" class="builder-btn" onclick="abrirSubModal('coberturaSubModal')">
-          🍯 Cobertura <small id="lblCobertura">Opcional</small>
+        <button type="button" class="builder-btn" onclick="abrirSubModal('gourmetSubModal')">
+          ✨ Salada Gourmet <small id="lblGourmet">Opcional</small>
         </button>
       </div>
 
@@ -205,18 +205,49 @@
     </div>
   </div>
 
-  <div class="modal" id="coberturaSubModal">
-    <div class="modal-box">
-      <div class="modal-head"><h3>🍯 Cobertura</h3><button class="close-modal" onclick="fecharSubModal('coberturaSubModal')">×</button></div>
-      <div class="options-grid">
-        <label class="opt"><input type="radio" name="tempCobertura" value="Nenhuma|0" checked onchange="atualizarLabelsSalada()"> Nenhuma</label>
-        <label class="opt"><input type="radio" name="tempCobertura" value="Creme de leite Ninho|3" onchange="atualizarLabelsSalada()"> Creme de leite Ninho <span class="price-tag">+R$ 3,00</span></label>
-        <label class="opt"><input type="radio" name="tempCobertura" value="Iogurte integral|2.5" onchange="atualizarLabelsSalada()"> Iogurte integral <span class="price-tag">+R$ 2,50</span></label>
-        <label class="opt"><input type="radio" name="tempCobertura" value="Iogurte c/ doce de leite|3.5" onchange="atualizarLabelsSalada()"> Iogurte c/ doce de leite <span class="price-tag">+R$ 3,50</span></label>
-      </div>
-      <button class="btn-main-action" onclick="fecharSubModal('coberturaSubModal')">Ok</button>
+  <div class="modal" id="gourmetSubModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>✨ Opção Gourmet</h3>
+      <button type="button" class="close-modal" onclick="fecharSubModal('gourmetSubModal')">×</button>
     </div>
+    <div class="options-grid">
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Nenhuma|0" checked onchange="atualizarLabelsSalada()"> 
+        Nenhuma
+      </label>
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Creme de Leite Ninho|4.00" onchange="atualizarLabelsSalada()"> 
+        Creme de Leite Ninho <span class="price-tag">+R$ 4,00</span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Doce de Leite c/ Iogurte Integral|4.00" onchange="atualizarLabelsSalada()"> 
+        Doce de Leite c/ Iogurte Integral <span class="price-tag">+R$ 4,00</span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Iogurte Integral|3.00" onchange="atualizarLabelsSalada()"> 
+        Iogurte Integral <span class="price-tag">+R$ 3,00</span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Whey Protein|5.00" onchange="atualizarLabelsSalada()"> 
+        Whey Protein <span class="price-tag">+R$ 5,00</span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Só Uva Congelada|3.50" onchange="atualizarLabelsSalada()"> 
+        Só Uva Congelada <span class="price-tag">+R$ 3,50</span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Temperada de Abacaxi|3.00" onchange="atualizarLabelsSalada()"> 
+        Temperada de Abacaxi <span class="price-tag">+R$ 3,00</span>
+      </label>
+      <label class="opt">
+        <input type="radio" name="tempGourmet" value="Temperada de Manga|3.00" onchange="atualizarLabelsSalada()"> 
+        Temperada de Manga <span class="price-tag">+R$ 3,00</span>
+      </label>
+    </div>
+    <button type="button" class="btn-main-action" onclick="fecharSubModal('gourmetSubModal')">Ok</button>
   </div>
+</div>
 
   <!-- TELA FINAL DE RESULTADO/RESUMO -->
   <div id="resultado">

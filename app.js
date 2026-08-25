@@ -106,6 +106,27 @@ function abrirMontadorSalada() {
   atualizarLabelsSalada();
   document.getElementById('erroMontador').style.display = 'none';
   document.getElementById('saladaModal').classList.add('show');
+
+  // Dentro de abrirMontadorSalada():
+const defaultGourmet = document.querySelector('input[name="tempGourmet"][value="Nenhuma|0"]');
+if (defaultGourmet) defaultGourmet.checked = true;
+
+// Em atualizarLabelsSalada():
+function atualizarLabelsSalada() {
+  const copoChecked = document.querySelector('input[name="tempCopo"]:checked');
+  const frutasChecked = [...document.querySelectorAll('#frutasContainer input:checked')].map(f => f.value);
+  const adicionaisChecked = [...document.querySelectorAll('#adicionaisContainer input:checked')].map(a => a.value);
+  const gourmetChecked = document.querySelector('input[name="tempGourmet"]:checked');
+
+  document.getElementById('lblCopo').textContent = copoChecked ? copoChecked.value.split('|')[0] + 'ml' : 'Escolher tamanho *';
+  document.getElementById('lblFrutas').textContent = frutasChecked.length ? frutasChecked.join(', ') : 'Escolher frutas *';
+  document.getElementById('lblAdicionais').textContent = adicionaisChecked.length ? adicionaisChecked.join(', ') : 'Opcional';
+  
+  const lblGourmet = document.getElementById('lblGourmet');
+  if (lblGourmet) {
+    lblGourmet.textContent = gourmetChecked ? gourmetChecked.value.split('|')[0] : 'Opcional';
+  }
+}
 }
 
 function fecharSaladaModal() {
@@ -165,6 +186,52 @@ function confirmarSaladaEAdicionar() {
   let detalheTexto = `Frutas: ${frutasSel.join(', ')}`;
   if (adicionaisNomes.length) detalheTexto += `<br>Adicionais: ${adicionaisNomes.join(', ')}`;
   if (coberturaNome !== "Nenhuma") detalheTexto += `<br>Cobertura: ${coberturaNome}`;
+
+  carrinho.push({
+    id: Date.now(),
+    nome: `Salada de Frutas (${tamanho})`,
+    detalhes: detalheTexto,
+    precoUnitario: precoUnitario,
+    qtd: montadorQtd
+  });
+
+  atualizarCarrinhoUI();
+  fecharSaladaModal();
+  toggleCartDrawer(true);
+}
+function confirmarSaladaEAdicionar() {
+  const copoSel = document.querySelector('input[name="tempCopo"]:checked');
+  const frutasSel = [...document.querySelectorAll('#frutasContainer input:checked')].map(f => f.value);
+
+  if (!copoSel || frutasSel.length === 0) {
+    document.getElementById('erroMontador').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('erroMontador').style.display = 'none';
+
+  let precoUnitario = parseFloat(copoSel.value.split('|')[1]);
+  const tamanho = copoSel.value.split('|')[0] + 'ml';
+
+  const adicionaisNodes = [...document.querySelectorAll('#adicionaisContainer input:checked')];
+  let adicionaisNomes = [];
+  adicionaisNodes.forEach(node => {
+    precoUnitario += parseFloat(node.dataset.preco);
+    adicionaisNomes.push(node.value);
+  });
+
+  // Leitura da opção Gourmet
+  const gourmetSel = document.querySelector('input[name="tempGourmet"]:checked');
+  let gourmetNome = "Nenhuma";
+  if (gourmetSel) {
+    const parts = gourmetSel.value.split('|');
+    gourmetNome = parts[0];
+    precoUnitario += parseFloat(parts[1]);
+  }
+
+  let detalheTexto = `Frutas: ${frutasSel.join(', ')}`;
+  if (adicionaisNomes.length) detalheTexto += `<br>Adicionais: ${adicionaisNomes.join(', ')}`;
+  if (gourmetNome !== "Nenhuma") detalheTexto += `<br>Gourmet: ${gourmetNome}`;
 
   carrinho.push({
     id: Date.now(),
