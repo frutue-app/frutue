@@ -78,8 +78,49 @@ let sacolaoQtds = {};
 document.addEventListener('DOMContentLoaded', () => {
   renderizarListaFrutasPeso();
   renderizarSacolao();
+  carregarFrutasDisponiveis();
   atualizarCarrinhoUI();
 });
+
+// ===================== ESTOQUE DO ADMIN =====================
+function carregarFrutasDisponiveis() {
+  const salvo = localStorage.getItem('frutue_estoque_frutas');
+  if (!salvo) return;
+
+  const estoque = JSON.parse(salvo);
+
+  estoque.forEach(item => {
+    // Extrai o nome limpo da fruta (ex: "Morango" a partir de "Morango 🍓")
+    const nomeFruta = item.nome.split(' ')[0];
+    
+    // Procura por checkboxes que tenham o valor ou label correspondente à fruta
+    const inputs = document.querySelectorAll('input[type="checkbox"]');
+    
+    inputs.forEach(cb => {
+      // Verifica se o valor do checkbox contém o nome da fruta
+      if (cb.value && cb.value.includes(nomeFruta)) {
+        const parentLabel = cb.closest('.opt-card') || cb.closest('.peso-item-row') || cb.parentElement;
+        
+        if (!item.disponivel) {
+          cb.disabled = true;
+          cb.checked = false;
+          if (parentLabel) {
+            parentLabel.style.opacity = '0.4';
+            parentLabel.style.pointerEvents = 'none';
+            parentLabel.title = 'Esgotado hoje';
+          }
+        } else {
+          cb.disabled = false;
+          if (parentLabel) {
+            parentLabel.style.opacity = '1';
+            parentLabel.style.pointerEvents = 'auto';
+            parentLabel.title = '';
+          }
+        }
+      }
+    });
+  });
+}
 
 function toggleCartDrawer(open) {
   document.getElementById('cartOverlay').classList.toggle('show', open);
@@ -274,6 +315,7 @@ function confirmarItensSacolao() {
 // ===================== SALADA POR PESO =====================
 function abrirSaladaPesoModal() {
   document.getElementById('erroSaladaPeso').style.display = 'none';
+  carregarFrutasDisponiveis();
   document.getElementById('saladaPesoModal').classList.add('show');
   calcularTotalSaladaPeso();
 }
@@ -292,7 +334,7 @@ function renderizarListaFrutasPeso() {
     row.className = 'peso-item-row';
     row.innerHTML = `
       <label class="peso-item-label" for="pesoFruta_${idx}">
-        <input type="checkbox" id="pesoFruta_${idx}" onchange="togglePesoInput(${idx}); calcularTotalSaladaPeso();">
+        <input type="checkbox" id="pesoFruta_${idx}" value="${fruta}" onchange="togglePesoInput(${idx}); calcularTotalSaladaPeso();">
         <span>${fruta}</span>
       </label>
       <div class="peso-item-input-wrap">
@@ -394,8 +436,14 @@ function alterarQtdMontador(delta) {
   document.getElementById('montadorQtdVal').textContent = montadorQtd;
 }
 
-function abrirSubModal(id) { document.getElementById(id).classList.add('show'); }
-function fecharSubModal(id) { document.getElementById(id).classList.remove('show'); }
+function abrirSubModal(id) { 
+  carregarFrutasDisponiveis();
+  document.getElementById(id).classList.add('show'); 
+}
+
+function fecharSubModal(id) { 
+  document.getElementById(id).classList.remove('show'); 
+}
 
 function atualizarLabelsSalada() {
   const copoChecked = document.querySelector('input[name="tempCopo"]:checked');
@@ -463,6 +511,7 @@ function abrirGourmetModal(tipo) {
   `;
 
   document.querySelectorAll('#gourmetFrutasContainer input').forEach(c => c.checked = false);
+  carregarFrutasDisponiveis();
   document.getElementById('erroGourmet').style.display = 'none';
   document.getElementById('gourmetModal').classList.add('show');
 }
@@ -519,6 +568,8 @@ function obterLocalizacaoGPS() {
     }
   );
 }
+
+// ===================== SANDUÍCHES =====================
 let sanduicheAtual = { nome: '', precoUnid: 0, precoSemanal: null };
 
 function abrirSanduicheModal(nome, precoUnid, precoSemanal) {
@@ -567,4 +618,15 @@ function confirmarSanduiche() {
 
   adicionarItemDireto(nomeItem, preco);
   fecharSanduicheModal();
+}
+// ===================== ACESSO RESTRITO ADMIN =====================
+function acessarAdmin() {
+  const senhaCorreta = "Frutue@2026";
+  const senhaInformada = prompt("Digite a senha do Administrador:");
+
+  if (senhaInformada === senhaCorreta) {
+    window.location.href = "admin.html";
+  } else if (senhaInformada !== null) {
+    alert("❌ Senha incorreta! Acesso negado.");
+  }
 }
