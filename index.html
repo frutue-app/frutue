@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Frutue - Faça seu Pedido</title>
+  
+  <link rel="icon" type="image/jpeg" href="img/logo.jpg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -18,11 +20,7 @@
       </div>
     </div>
     
-    <!-- BOTOES NO CABEÇALHO (SACOLÃO AO LADO DO CARRINHO) -->
     <div class="header-actions">
-      <button type="button" class="btn-sacolao-trigger" onclick="abrirSacolaoModal()" aria-label="Abrir Sacolão">
-        🧺 Sacolão
-      </button>
       <button type="button" class="btn-cart-trigger" onclick="toggleCartDrawer(true)" aria-label="Abrir Carrinho">
         🛒 Carrinho <span class="cart-badge" id="cartCount">0</span>
       </button>
@@ -39,8 +37,16 @@
     <div class="cart-body" id="cartList"></div>
     <div class="cart-footer">
       <div class="cart-summary">
-        <span>Total do Carrinho:</span>
+        <span>Subtotal:</span>
         <strong id="cartSubtotal">R$ 0,00</strong>
+      </div>
+      <div class="cart-summary" id="cartTaxaEntregaRow" style="display: none; font-size: 0.88rem; color: var(--text-muted);">
+        <span>Taxa de Entrega:</span>
+        <strong id="cartTaxaEntrega">R$ 2,00</strong>
+      </div>
+      <div class="cart-summary" style="font-size: 1.1rem; border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 6px;">
+        <span>Total:</span>
+        <strong id="cartTotalGeral">R$ 0,00</strong>
       </div>
       <button type="button" class="btn-secondary" onclick="toggleCartDrawer(false)">Continuar Comprando</button>
     </div>
@@ -49,135 +55,172 @@
   <main class="container" id="formArea">
 
     <!-- 1. SALADAS SIMPLES -->
-    <div class="card-section">
+    <section class="card-section">
       <div class="section-title">
         <div>
-          <h2>🍓 Salada Simples</h2>
-          <small>Personalize por copo, frutas e adicionais</small>
+          <h2>🍓 Saladas Simples</h2>
+          <small>Personalize seu copo, frutas e adicionais</small>
         </div>
       </div>
       <button type="button" class="btn-primary" onclick="abrirMontadorSalada()">
         ➕ Monte sua Salada Simples
       </button>
-    </div>
+    </section>
 
-    <!-- 2. SALADA POR PESO -->
-    <div class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>⚖️ Salada Por Peso</h2>
-          <small>R$ 35,00 / kg — Monte peso e frutas do seu jeito</small>
-        </div>
-      </div>
-      <button type="button" class="btn-primary" onclick="abrirSaladaPesoModal()">
-        ⚖️ Escolher Frutas e Gramas
-      </button>
-    </div>
-
-    <!-- 3. SALADAS GOURMET PRONTAS -->
-    <div class="card-section">
+    <!-- 2. SALADAS GOURMET -->
+    <section class="card-section">
       <div class="section-title">
         <div>
           <h2>✨ Saladas Gourmet</h2>
-          <small>Opções prontas (400ml ou 500ml)</small>
+          <small>Opções prontas e cremosas</small>
         </div>
       </div>
       <div class="options-grid">
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Creme de Leite Ninho')">
-          <span>Creme de Leite Ninho</span>
-          <span class="price-tag">A partir de R$ 18,00</span>
+        <button type="button" class="opt-card" onclick="abrirGourmetModal('Dulce Fit')">
+          <span>Dulce Fit</span>
+          <span class="price-tag">A partir de R$ 14,00</span>
         </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Doce de Leite c/ Iogurte Integral')">
-          <span>Doce de Leite c/ Iogurte</span>
-          <span class="price-tag">A partir de R$ 18,00</span>
+        <button type="button" class="opt-card" onclick="abrirGourmetModal('Iogurte Natural')">
+          <span>Iogurte Natural</span>
+          <span class="price-tag">A partir de R$ 12,00</span>
         </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Iogurte Integral')">
-          <span>Iogurte Integral</span>
-          <span class="price-tag">A partir de R$ 16,00</span>
+        <button type="button" class="opt-card" onclick="abrirGourmetModal('Iogurte + Whey')">
+          <span>Iogurte + Whey</span>
+          <span class="price-tag">A partir de R$ 14,00</span>
         </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Whey Protein')">
-          <span>Whey Protein</span>
-          <span class="price-tag">A partir de R$ 20,00</span>
+        <button type="button" class="opt-card" onclick="abrirGourmetModal('Creme de Whey')">
+          <span>Creme de Whey</span>
+          <span class="price-tag">A partir de R$ 12,00</span>
         </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Só Uva Congelada')">
-          <span>Só Uva Congelada</span>
-          <span class="price-tag">A partir de R$ 17,00</span>
+        <button type="button" class="opt-card" onclick="abrirGourmetModal('Creme de Ninho')">
+          <span>Creme de Ninho</span>
+          <span class="price-tag">A partir de R$ 10,00</span>
+        </button>
+        <button type="button" class="opt-card" onclick="abrirGourmetModal('Nutella')">
+          <span>Nutella</span>
+          <span class="price-tag">A partir de R$ 10,00</span>
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- 4. SALADA TEMPERADA -->
-    <div class="card-section">
+    <!-- 3. SANDUÍCHES -->
+    <section class="card-section">
       <div class="section-title">
         <div>
-          <h2>🍍 Salada Temperada</h2>
-          <small>Especial da Casa (400ml)</small>
+          <h2>🥪 Sanduíches</h2>
+          <small>Selecione o sabor para escolher a modalidade (Unidade ou Semanal)</small>
         </div>
       </div>
       <div class="options-grid">
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Salada Temperada de Abacaxi (400ml)', 15.00)">
-          <span>Temperada de Abacaxi</span>
-          <span class="price-tag">R$ 15,00</span>
+        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Sanduíche Natural', 7.00, null)">
+          <span>Sanduíche Natural</span>
+          <span class="price-tag">R$ 7,00</span>
         </button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Salada Temperada de Manga (400ml)', 15.00)">
-          <span>Temperada de Manga</span>
-          <span class="price-tag">R$ 15,00</span>
+        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Doce de Leite c/ Banana', 6.00, 23.00)">
+          <span>Doce de Leite c/ Banana</span>
+          <span class="price-tag">A partir de R$ 6,00</span>
+        </button>
+        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Pasta de Amendoim c/ Banana', 6.00, 23.00)">
+          <span>Pasta de Amendoim c/ Banana</span>
+          <span class="price-tag">A partir de R$ 6,00</span>
+        </button>
+        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Nutella c/ Banana', 7.00, 33.00)">
+          <span>Nutella c/ Banana</span>
+          <span class="price-tag">A partir de R$ 7,00</span>
+        </button>
+        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Nutella c/ Morango e Castanha', 12.00, 50.00)">
+          <span>Nutella c/ Morango e Castanha</span>
+          <span class="price-tag">A partir de R$ 12,00</span>
+        </button>
+        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Doce de Leite Zero Lactose', 7.00, 25.00)">
+          <span>Doce de Leite Zero Lactose</span>
+          <span class="price-tag">A partir de R$ 7,00</span>
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- 5. SUCO PERSONALIZADO -->
-    <div class="card-section">
+    <!-- 4. FRANGO DESFIADO -->
+    <section class="card-section">
       <div class="section-title">
         <div>
-          <h2>🥤 Suco Personalizado</h2>
-          <small>Suco natural 500ml</small>
-        </div>
-      </div>
-      <button type="button" class="btn-primary" onclick="abrirSucoModal()">
-        🍊 Escolher Fruta do Suco
-      </button>
-    </div>
-
-    <!-- 6. OUTRAS BEBIDAS -->
-    <div class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>🥤 Outras Bebidas</h2>
-          <small>Prontas para consumo</small>
+          <h2>🍗 Frango Desfiado</h2>
+          <small>Prático e saudável para suas refeições</small>
         </div>
       </div>
       <div class="options-grid">
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Água de Coco (400ml)', 6.00)"><span>Água de Coco 400ml</span><span class="price-tag">R$ 6,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Água de Coco (500ml)', 8.00)"><span>Água de Coco 500ml</span><span class="price-tag">R$ 8,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Coca-Cola Zero (Lata)', 5.50)"><span>Coca Zero</span><span class="price-tag">R$ 5,50</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco de Uva Integral (300ml)', 7.50)"><span>Suco Uva Integral</span><span class="price-tag">R$ 7,50</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Água Sem Gás (500ml)', 3.00)"><span>Água sem Gás</span><span class="price-tag">R$ 3,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Água Com Gás (500ml)', 4.00)"><span>Água com Gás</span><span class="price-tag">R$ 4,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Frango desfiado (Pote de 200g)', 12.00)">
+          <span>Pote de 200g</span>
+          <span class="price-tag">R$ 12,00</span>
+        </button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Frango desfiado (Pote de 400g)', 22.00)">
+          <span>Pote de 400g</span>
+          <span class="price-tag">R$ 22,00</span>
+        </button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Frango desfiado (Pote de 500g)', 28.00)">
+          <span>Pote de 500g</span>
+          <span class="price-tag">R$ 28,00</span>
+        </button>
       </div>
-    </div>
+    </section>
 
-    <!-- 7. PORÇÕES EXTRAS -->
-    <div class="card-section">
+    <!-- 5. FRUTAS / PORÇÕES -->
+    <section class="card-section">
       <div class="section-title">
         <div>
-          <h2>🥜 Porções Extras</h2>
-          <small>Complementos adicionais</small>
+          <h2>🍇 Frutas e Porções</h2>
+          <small>Porções congeladas, temperadas e por peso</small>
         </div>
       </div>
       <div class="options-grid">
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Porção Extra de Granola', 3.00)"><span>Granola</span><span class="price-tag">+ R$ 3,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Porção Extra de Leite Ninho', 3.50)"><span>Leite Ninho em Pó</span><span class="price-tag">+ R$ 3,50</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Porção Extra de Mel', 2.50)"><span>Mel</span><span class="price-tag">+ R$ 2,50</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Porção Extra de Castanhas', 4.00)"><span>Castanhas</span><span class="price-tag">+ R$ 4,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Uva congelada (400ml)', 6.00)"><span>Uva congelada 400ml</span><span class="price-tag">R$ 6,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Uva congelada (500ml)', 8.00)"><span>Uva congelada 500ml</span><span class="price-tag">R$ 8,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Manga temperada (400ml)', 6.00)"><span>Manga temperada 400ml</span><span class="price-tag">R$ 6,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Manga temperada (500ml)', 8.00)"><span>Manga temperada 500ml</span><span class="price-tag">R$ 8,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Abacaxi temperado (400ml)', 6.00)"><span>Abacaxi temperado 400ml</span><span class="price-tag">R$ 6,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Abacaxi temperado (500ml)', 8.00)"><span>Abacaxi temperado 500ml</span><span class="price-tag">R$ 8,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Saquinho de castanha de caju', 3.00)"><span>Saquinho de castanha de caju</span><span class="price-tag">R$ 3,00</span></button>
       </div>
-    </div>
+      <div style="margin-top: 15px;">
+        <button type="button" class="btn-primary" onclick="abrirSaladaPesoModal()">
+          ⚖️ Montar Salada por Peso (R$ 35,00/kg)
+        </button>
+      </div>
+    </section>
+
+    <!-- 6. BEBIDAS -->
+    <section class="card-section">
+      <div class="section-title">
+        <div>
+          <h2>🥤 Bebidas</h2>
+          <small>Sucos e bebidas refrescantes</small>
+        </div>
+      </div>
+      <div class="options-grid">
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco detox', 5.00)"><span>Suco detox</span><span class="price-tag">R$ 5,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco de uva integral', 7.00)"><span>Suco de uva integral</span><span class="price-tag">R$ 7,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Coca-Cola Zero', 5.00)"><span>Coca-Cola Zero</span><span class="price-tag">R$ 5,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Água de coco', 6.00)"><span>Água de coco</span><span class="price-tag">R$ 6,00</span></button>
+        <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco de laranja', 7.00)"><span>Suco de laranja</span><span class="price-tag">R$ 7,00</span></button>
+      </div>
+    </section>
 
     <!-- DADOS DE ENTREGA -->
-    <div class="card-section">
+    <section class="card-section">
       <div class="section-title">
-        <h2>📍 Dados de Entrega</h2>
+        <h2>📍 Forma de Recebimento e Dados</h2>
       </div>
+
+      <div class="field">
+        <label for="tipoRecebimentoSelect">Tipo de Recebimento *</label>
+        <select id="tipoRecebimentoSelect" onchange="atualizarTaxaEntregaUI()">
+          <option value="Entrega">Entrega (Taxa: R$ 2,00)</option>
+          <option value="Retirada">Retirada no Local (Sem Taxa)</option>
+        </select>
+        <div id="avisoTaxaEntrega" style="font-size: 0.85rem; color: var(--primary-hover); font-weight: 600; margin-top: 6px;">
+          🛵 Taxa de entrega: R$ 2,00
+        </div>
+      </div>
+
       <div class="field">
         <label for="nomeInput">Nome completo *</label>
         <input type="text" id="nomeInput" placeholder="Ex: Maria Silva">
@@ -186,21 +229,18 @@
         <label for="telefoneInput">Telefone / WhatsApp</label>
         <input type="text" id="telefoneInput" placeholder="Ex: (86) 99999-9999">
       </div>
-      <div class="field">
+      <div class="field" id="campoEnderecoWrap">
         <label for="enderecoInput">Endereço de entrega *</label>
         <input type="text" id="enderecoInput" placeholder="Ex: Rua das Flores, 123, Centro">
       </div>
 
-      <div class="field">
+      <div class="field" id="campoGpsWrap">
         <label>Localização por GPS (Opcional)</label>
         <button type="button" class="btn-location" onclick="obterLocalizacaoGPS()">
           📍 Capturar Minha Localização Atual
         </button>
         <input type="hidden" id="localizacaoHidden">
         <p class="location-status" id="locationStatus"></p>
-        <div class="location-warning">
-          ⚠️ <strong>Aviso:</strong> Se alterar o endereço digitado acima, recapture a localização para atualizar a rota no mapa.
-        </div>
       </div>
 
       <div class="field">
@@ -215,8 +255,8 @@
         <label for="observacaoInput">Observações gerais</label>
         <textarea id="observacaoInput" rows="2" maxlength="300" placeholder="Ex: Campainha quebrada, entregar na portaria..."></textarea>
       </div>
-      <div class="msg-erro" id="erroDados">Preencha nome, endereço e adicione pelo menos um item ao carrinho.</div>
-    </div>
+      <div class="msg-erro" id="erroDados">Preencha os campos obrigatórios e adicione pelo menos um item ao carrinho.</div>
+    </section>
 
   </main>
 
@@ -229,24 +269,21 @@
     <button type="button" class="btn-checkout" onclick="gerarPedido()">Finalizar Pedido</button>
   </div>
 
-  <!-- MODAL DO SACOLÃO (COM QUANTIDADES POR UNIDADE E CATEGORIAS) -->
-  <div class="modal" id="sacolaoModal">
-    <div class="modal-box modal-lg">
-      <div class="modal-head">
-        <h3>🧺 Sessão Sacolão Frutue</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharSacolaoModal()">×</button>
-      </div>
-      <p class="modal-subtitle">Escolha as unidades dos seus itens do hortifrúti:</p>
-      
-      <div class="sacolao-container" id="sacolaoCategoriasList">
-        <!-- Inserido dinamicamente via JS -->
-      </div>
+  <!-- MODAIS DE SELEÇÃO E OPÇÕES -->
 
-      <div class="msg-erro" id="erroSacolao">Selecione ao menos 1 unidade de algum item.</div>
-      
-      <div class="modal-actions" style="margin-top: 15px;">
-        <button type="button" class="btn-primary" onclick="confirmarItensSacolao()">Adicionar Seleção ao Carrinho</button>
+  <!-- MODAL SELEÇÃO DE SANDUÍCHE -->
+  <div class="modal" id="sanduicheModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3 id="sanduicheModalTitle">Sanduíche</h3>
+        <button type="button" class="btn-close-modal" onclick="fecharSanduicheModal()">×</button>
       </div>
+      <div class="field">
+        <label>Escolha a Modalidade:</label>
+        <div class="options-grid" id="sanduicheOptionsContainer"></div>
+      </div>
+      <div class="msg-erro" id="erroSanduiche">Selecione uma das opções acima.</div>
+      <button type="button" class="btn-primary" onclick="confirmarSanduiche()">Adicionar ao Carrinho</button>
     </div>
   </div>
 
@@ -257,21 +294,12 @@
         <h3>⚖️ Salada por Peso (R$ 35,00/kg)</h3>
         <button type="button" class="btn-close-modal" onclick="fecharSaladaPesoModal()">×</button>
       </div>
-      <p class="modal-subtitle">Escolha as frutas desejadas e informe a quantidade em gramas de cada uma:</p>
-      
+      <p class="modal-subtitle">Escolha as frutas desejadas e informe a quantidade em gramas:</p>
       <div class="peso-items-list" id="pesoFrutasList"></div>
-
       <div class="peso-summary-box">
-        <div class="peso-summary-row">
-          <span>Peso total:</span>
-          <strong id="pesoTotalGrams">0 g</strong>
-        </div>
-        <div class="peso-summary-row highlight">
-          <span>Valor Estimado:</span>
-          <strong id="pesoTotalValor">R$ 0,00</strong>
-        </div>
+        <div class="peso-summary-row"><span>Peso total:</span><strong id="pesoTotalGrams">0 g</strong></div>
+        <div class="peso-summary-row highlight"><span>Valor Estimado:</span><strong id="pesoTotalValor">R$ 0,00</strong></div>
       </div>
-
       <div class="msg-erro" id="erroSaladaPeso">Selecione e informe gramas válidas (mínimo de 50g no total).</div>
       <button type="button" class="btn-primary" onclick="confirmarSaladaPeso()">Adicionar Salada por Peso ao Carrinho</button>
     </div>
@@ -286,7 +314,7 @@
       </div>
       <div class="builder-grid">
         <button type="button" class="builder-btn" onclick="abrirSubModal('copoSubModal')">
-          <span>🥤 Copo</span>
+          <span>🥤 Copo / Plano</span>
           <small id="lblCopo">Escolher tamanho *</small>
         </button>
         <button type="button" class="builder-btn" onclick="abrirSubModal('frutaSubModal')">
@@ -306,21 +334,28 @@
           <button type="button" class="qty-btn" onclick="alterarQtdMontador(1)">+</button>
         </div>
       </div>
-      <div class="msg-erro" id="erroMontador">Selecione o tamanho do copo e pelo menos uma fruta.</div>
+      <div class="msg-erro" id="erroMontador">Selecione o tamanho/plano do copo e pelo menos uma fruta.</div>
       <button type="button" class="btn-primary" onclick="confirmarSaladaEAdicionar()">Adicionar Salada ao Carrinho</button>
     </div>
   </div>
 
-  <!-- SUB-MODAIS SALADA SIMPLES -->
+  <!-- SUBMODAIS SALADA SIMPLES -->
   <div class="modal" id="copoSubModal">
     <div class="modal-box">
-      <div class="modal-head"><h3>🥤 Escolha o Tamanho</h3><button class="btn-close-modal" onclick="fecharSubModal('copoSubModal')">×</button></div>
+      <div class="modal-head"><h3>🥤 Escolha o Tamanho ou Plano</h3><button class="btn-close-modal" onclick="fecharSubModal('copoSubModal')">×</button></div>
+      <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;">Preço Unidade:</div>
       <div class="options-grid">
-        <label class="opt-card"><input type="radio" name="tempCopo" value="250|12" onchange="atualizarLabelsSalada()"> 250ml <span class="price-tag">R$ 12,00</span></label>
-        <label class="opt-card"><input type="radio" name="tempCopo" value="400|16" onchange="atualizarLabelsSalada()"> 400ml <span class="price-tag">R$ 16,00</span></label>
-        <label class="opt-card"><input type="radio" name="tempCopo" value="500|20" onchange="atualizarLabelsSalada()"> 500ml <span class="price-tag">R$ 20,00</span></label>
+        <label class="opt-card"><input type="radio" name="tempCopo" value="250ml (Unid.)|4" onchange="atualizarLabelsSalada()"> 250ml <span class="price-tag">R$ 4,00</span></label>
+        <label class="opt-card"><input type="radio" name="tempCopo" value="400ml (Unid.)|6" onchange="atualizarLabelsSalada()"> 400ml <span class="price-tag">R$ 6,00</span></label>
+        <label class="opt-card"><input type="radio" name="tempCopo" value="500ml (Unid.)|8" onchange="atualizarLabelsSalada()"> 500ml <span class="price-tag">R$ 8,00</span></label>
       </div>
-      <button class="btn-primary" onclick="fecharSubModal('copoSubModal')">Confirmar Tamanho</button>
+      <div style="margin: 12px 0 10px; font-weight: bold; font-size: 0.9rem;">Preço Semanal:</div>
+      <div class="options-grid">
+        <label class="opt-card"><input type="radio" name="tempCopo" value="250ml (Semanal)|18" onchange="atualizarLabelsSalada()"> 250ml <span class="price-tag">R$ 18,00</span></label>
+        <label class="opt-card"><input type="radio" name="tempCopo" value="400ml (Semanal)|25" onchange="atualizarLabelsSalada()"> 400ml <span class="price-tag">R$ 25,00</span></label>
+        <label class="opt-card"><input type="radio" name="tempCopo" value="500ml (Semanal)|35" onchange="atualizarLabelsSalada()"> 500ml <span class="price-tag">R$ 35,00</span></label>
+      </div>
+      <button class="btn-primary" style="margin-top: 15px;" onclick="fecharSubModal('copoSubModal')">Confirmar</button>
     </div>
   </div>
 
@@ -364,11 +399,8 @@
         <button type="button" class="btn-close-modal" onclick="fecharGourmetModal()">×</button>
       </div>
       <div class="field">
-        <label>Escolha o Tamanho:</label>
-        <div class="options-grid">
-          <label class="opt-card"><input type="radio" name="gourmetCopo" value="400|18" checked> 400ml <span class="price-tag">R$ 18,00</span></label>
-          <label class="opt-card"><input type="radio" name="gourmetCopo" value="500|22"> 500ml <span class="price-tag">R$ 22,00</span></label>
-        </div>
+        <label>Escolha o Tamanho / Modalidade:</label>
+        <div class="options-grid" id="gourmetPrecosContainer"></div>
       </div>
       <div class="field">
         <label>Escolha as Frutas:</label>
@@ -381,31 +413,8 @@
           <label class="opt-card"><input type="checkbox" value="Manga"> Manga 🥭</label>
         </div>
       </div>
-      <div class="msg-erro" id="erroGourmet">Selecione pelo menos uma fruta.</div>
+      <div class="msg-erro" id="erroGourmet">Selecione pelo menos uma fruta e o tamanho.</div>
       <button type="button" class="btn-primary" onclick="confirmarSaladaGourmet()">Adicionar ao Carrinho</button>
-    </div>
-  </div>
-
-  <!-- MODAL SUCO PERSONALIZADO -->
-  <div class="modal" id="sucoModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>🍊 Suco Personalizado (500ml)</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharSucoModal()">×</button>
-      </div>
-      <div class="field">
-        <label>Escolha a fruta desejada (R$ 7,50):</label>
-        <div class="options-grid">
-          <label class="opt-card"><input type="radio" name="sucoFruta" value="Laranja" checked> Laranja</label>
-          <label class="opt-card"><input type="radio" name="sucoFruta" value="Abacaxi com Hortelã"> Abacaxi c/ Hortelã</label>
-          <label class="opt-card"><input type="radio" name="sucoFruta" value="Morango"> Morango</label>
-          <label class="opt-card"><input type="radio" name="sucoFruta" value="Maracujá"> Maracujá</label>
-          <label class="opt-card"><input type="radio" name="sucoFruta" value="Acerola"> Acerola</label>
-          <label class="opt-card"><input type="radio" name="sucoFruta" value="Goiaba"> Goiaba</label>
-          <label class="opt-card"><input type="radio" name="sucoFruta" value="Manga"> Manga</label>
-        </div>
-      </div>
-      <button type="button" class="btn-primary" onclick="confirmarSucoPersonalizado()">Adicionar Suco ao Carrinho</button>
     </div>
   </div>
 

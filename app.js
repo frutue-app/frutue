@@ -4,10 +4,20 @@ const CONFIG = {
   pixChave: "loja@exemplo.com",
   pixNomeRecebedor: "FRUTUE",
   pixCidade: "SAO PAULO",
+  taxaEntrega: 2.00,
   apiUrl: "https://script.google.com/macros/s/AKfycbxHTowPSlJ_fvKNFYJprhugOyLBhdA4rdvUWjz4wWFWCVDx-Jbwdr71aO7Q2vee7pxWNw/exec"
 };
 
-// ESTRUTURA DO SACOLÃO
+// PREÇOS SALADA GOURMET
+const GOURMET_PRECOS = {
+  "Dulce Fit": { "400": 14.00, "500": 16.00 },
+  "Iogurte Natural": { "400": 12.00, "500": 15.00 },
+  "Iogurte + Whey": { "400": 14.00, "500": 16.00 },
+  "Creme de Whey": { "400": 12.00, "500": 15.00 },
+  "Creme de Ninho": { "400": 10.00, "500": 14.00 },
+  "Nutella": { "400": 10.00, "500": 14.00 }
+};
+
 const SACOLAO_DADOS = [
   {
     categoria: "Frutas Essenciais",
@@ -71,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
   atualizarCarrinhoUI();
 });
 
-// ===================== CARRINHO LATERAL =====================
 function toggleCartDrawer(open) {
   document.getElementById('cartOverlay').classList.toggle('show', open);
   document.getElementById('cartDrawer').classList.toggle('open', open);
@@ -110,8 +119,13 @@ function removerItemCarrinho(id) {
   atualizarCarrinhoUI();
 }
 
+function atualizarTaxaEntregaUI() {
+  atualizarCarrinhoUI();
+}
+
 function atualizarCarrinhoUI() {
   const listEl = document.getElementById('cartList');
+  if (!listEl) return;
   listEl.innerHTML = '';
   let subtotal = 0;
   let totalItens = 0;
@@ -145,9 +159,25 @@ function atualizarCarrinhoUI() {
     });
   }
 
+  const tipoRecebimentoEl = document.getElementById('tipoRecebimentoSelect');
+  const ehEntrega = tipoRecebimentoEl ? tipoRecebimentoEl.value === 'Entrega' : true;
+  const taxaEntrega = (ehEntrega && carrinho.length > 0) ? CONFIG.taxaEntrega : 0;
+  const totalGeral = subtotal + taxaEntrega;
+
   document.getElementById('cartCount').textContent = totalItens;
   document.getElementById('cartSubtotal').textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
-  document.getElementById('totalValorBarra').textContent = 'R$ ' + subtotal.toFixed(2).replace('.', ',');
+
+  const taxaRow = document.getElementById('cartTaxaEntregaRow');
+  if (taxaRow) {
+    taxaRow.style.display = ehEntrega ? 'flex' : 'none';
+  }
+
+  const cartTotalGeralEl = document.getElementById('cartTotalGeral');
+  if (cartTotalGeralEl) {
+    cartTotalGeralEl.textContent = 'R$ ' + totalGeral.toFixed(2).replace('.', ',');
+  }
+
+  document.getElementById('totalValorBarra').textContent = 'R$ ' + totalGeral.toFixed(2).replace('.', ',');
 }
 
 // ===================== MODAL SACOLÃO =====================
@@ -372,7 +402,7 @@ function atualizarLabelsSalada() {
   const frutasChecked = [...document.querySelectorAll('#frutasContainer input:checked')].map(f => f.value);
   const adicionaisChecked = [...document.querySelectorAll('#adicionaisContainer input:checked')].map(a => a.value);
 
-  document.getElementById('lblCopo').textContent = copoChecked ? copoChecked.value.split('|')[0] + 'ml' : 'Escolher tamanho *';
+  document.getElementById('lblCopo').textContent = copoChecked ? copoChecked.value.split('|')[0] : 'Escolher tamanho *';
   document.getElementById('lblFrutas').textContent = frutasChecked.length ? frutasChecked.join(', ') : 'Escolher frutas *';
   document.getElementById('lblAdicionais').textContent = adicionaisChecked.length ? adicionaisChecked.join(', ') : 'Opcional';
 }
@@ -387,9 +417,8 @@ function confirmarSaladaEAdicionar() {
   }
   document.getElementById('erroMontador').style.display = 'none';
 
-  const [tamanhoMl, precoCopo] = copoSel.value.split('|');
+  const [tamanhoLabel, precoCopo] = copoSel.value.split('|');
   let precoUnitario = parseFloat(precoCopo);
-  const tamanho = `${tamanhoMl}ml`;
 
   const adicionaisNodes = [...document.querySelectorAll('#adicionaisContainer input:checked')];
   let adicionaisNomes = [];
@@ -403,7 +432,7 @@ function confirmarSaladaEAdicionar() {
 
   carrinho.push({
     id: Date.now() + Math.random(),
-    nome: `Salada Simples (${tamanho})`,
+    nome: `Salada Simples (${tamanhoLabel})`,
     detalhes: detalheTexto,
     precoUnitario: precoUnitario,
     qtd: montadorQtd
@@ -418,6 +447,21 @@ function confirmarSaladaEAdicionar() {
 function abrirGourmetModal(tipo) {
   gourmetTipoAtual = tipo;
   document.getElementById('gourmetModalTitle').textContent = `✨ Gourmet: ${tipo}`;
+  
+  const containerPrecos = document.getElementById('gourmetPrecosContainer');
+  const precos = GOURMET_PRECOS[tipo] || { "400": 10.00, "500": 14.00 };
+
+  containerPrecos.innerHTML = `
+    <label class="opt-card">
+      <input type="radio" name="gourmetCopo" value="400|${precos["400"]}" checked> 
+      400ml <span class="price-tag">R$ ${precos["400"].toFixed(2).replace('.', ',')}</span>
+    </label>
+    <label class="opt-card">
+      <input type="radio" name="gourmetCopo" value="500|${precos["500"]}"> 
+      500ml <span class="price-tag">R$ ${precos["500"].toFixed(2).replace('.', ',')}</span>
+    </label>
+  `;
+
   document.querySelectorAll('#gourmetFrutasContainer input').forEach(c => c.checked = false);
   document.getElementById('erroGourmet').style.display = 'none';
   document.getElementById('gourmetModal').classList.add('show');
@@ -452,19 +496,6 @@ function confirmarSaladaGourmet() {
   toggleCartDrawer(true);
 }
 
-// ===================== SUCO PERSONALIZADO =====================
-function abrirSucoModal() {
-  document.getElementById('sucoModal').classList.add('show');
-}
-function fecharSucoModal() {
-  document.getElementById('sucoModal').classList.remove('show');
-}
-function confirmarSucoPersonalizado() {
-  const frutaSel = document.querySelector('input[name="sucoFruta"]:checked').value;
-  adicionarItemDireto(`Suco de ${frutaSel} (500ml)`, 7.50);
-  fecharSucoModal();
-}
-
 // ===================== GEOLOCALIZAÇÃO =====================
 function obterLocalizacaoGPS() {
   const status = document.getElementById('locationStatus');
@@ -484,7 +515,56 @@ function obterLocalizacaoGPS() {
     },
     (error) => {
       console.error(error);
-      status.textContent = '❌ Erro ao capturar localização. Verifique as permissões de GPS.';
+      status.textContent = '❌ Erro ao capturar localização.';
     }
   );
+}
+let sanduicheAtual = { nome: '', precoUnid: 0, precoSemanal: null };
+
+function abrirSanduicheModal(nome, precoUnid, precoSemanal) {
+  sanduicheAtual = { nome, precoUnid, precoSemanal };
+  document.getElementById('sanduicheModalTitle').innerText = nome;
+  
+  const container = document.getElementById('sanduicheOptionsContainer');
+  document.getElementById('erroSanduiche').style.display = 'none';
+
+  let html = `
+    <label class="opt-card">
+      <input type="radio" name="sanduicheOpt" value="Unidade|${precoUnid}">
+      <span>Unidade</span>
+      <span class="price-tag">R$ ${precoUnid.toFixed(2).replace('.', ',')}</span>
+    </label>
+  `;
+
+  if (precoSemanal !== null) {
+    html += `
+      <label class="opt-card">
+        <input type="radio" name="sanduicheOpt" value="Semanal|${precoSemanal}">
+        <span>Plano Semanal</span>
+        <span class="price-tag">R$ ${precoSemanal.toFixed(2).replace('.', ',')}</span>
+      </label>
+    `;
+  }
+
+  container.innerHTML = html;
+  document.getElementById('sanduicheModal').style.display = 'flex';
+}
+
+function fecharSanduicheModal() {
+  document.getElementById('sanduicheModal').style.display = 'none';
+}
+
+function confirmarSanduiche() {
+  const selected = document.querySelector('input[name="sanduicheOpt"]:checked');
+  if (!selected) {
+    document.getElementById('erroSanduiche').style.display = 'block';
+    return;
+  }
+
+  const [modalidade, precoStr] = selected.value.split('|');
+  const preco = parseFloat(precoStr);
+  const nomeItem = `${sanduicheAtual.nome} (${modalidade})`;
+
+  adicionarItemDireto(nomeItem, preco);
+  fecharSanduicheModal();
 }

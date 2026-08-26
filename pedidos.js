@@ -1,19 +1,16 @@
-// pedidos.js — depende das variáveis/funções globais definidas em app.js
-// (CONFIG, carrinho, atualizarCarrinhoUI, etc.)
-
-// Guarda o ID do pedido já registrado, para que reenvios (após "Editar pedido")
-// atualizem a mesma linha na planilha em vez de criar uma nova.
 let pedidoAtualId = null;
 
 function gerarPedido() {
   const nome = document.getElementById('nomeInput').value.trim();
   const telefone = document.getElementById('telefoneInput').value.trim();
+  const tipoRecebimento = document.getElementById('tipoRecebimentoSelect').value;
+  const ehEntrega = tipoRecebimento === 'Entrega';
   const endereco = document.getElementById('enderecoInput').value.trim();
   const localizacao = document.getElementById('localizacaoHidden').value;
   const pagamento = document.getElementById('pagamentoSelect').value;
   const obs = document.getElementById('observacaoInput').value.trim();
 
-  if (!nome || !endereco || carrinho.length === 0) {
+  if (!nome || (ehEntrega && !endereco) || carrinho.length === 0) {
     document.getElementById('erroDados').style.display = 'block';
     return;
   }
@@ -30,24 +27,34 @@ function gerarPedido() {
     }
   });
 
+  const taxaEntrega = ehEntrega ? CONFIG.taxaEntrega : 0;
+  const totalGeral = subtotal + taxaEntrega;
+
   let resumo = `🛒 *Novo Pedido - Frutue*\n\n`;
   resumo += `👤 Nome: ${nome}\n`;
   if (telefone) resumo += `📞 Telefone: ${telefone}\n`;
-  resumo += `📍 Endereço: ${endereco}\n`;
-  if (localizacao) resumo += `🗺️ Localização GPS: ${localizacao}\n`;
+  resumo += `🚚 Recebimento: ${tipoRecebimento}\n`;
+  if (ehEntrega) {
+    resumo += `📍 Endereço: ${endereco}\n`;
+    if (localizacao) resumo += `🗺️ Localização GPS: ${localizacao}\n`;
+  }
   resumo += `💳 Pagamento: ${pagamento}\n`;
   if (obs) resumo += `📝 Observações: ${obs}\n`;
-  resumo += `\n🧾 Itens:\n${itensTexto}`;
-  resumo += `\n💰 *Total: R$ ${subtotal.toFixed(2).replace('.', ',')}*`;
+  resumo += `\n🧾 Itens:\n${itensTexto}\n`;
+  resumo += `Subtotal: R$ ${subtotal.toFixed(2).replace('.', ',')}\n`;
+  if (ehEntrega) {
+    resumo += `Taxa de entrega: R$ ${taxaEntrega.toFixed(2).replace('.', ',')}\n`;
+  }
+  resumo += `💰 *Total: R$ ${totalGeral.toFixed(2).replace('.', ',')}*`;
 
-  // Mostra a tela final e esconde o formulário
+  // Tela final
   document.getElementById('resumoTexto').textContent = resumo;
   document.getElementById('formArea').style.display = 'none';
   document.querySelector('.total-bar').style.display = 'none';
   document.getElementById('resultado').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // Botão do WhatsApp
+  // WhatsApp
   const mensagemWhats = encodeURIComponent(resumo);
   const linkWhats = `https://wa.me/${CONFIG.whatsappNumero}?text=${mensagemWhats}`;
   document.getElementById('btnWhats').onclick = () => window.open(linkWhats, '_blank');
@@ -87,20 +94,22 @@ function gerarPedido() {
     qrArea.appendChild(btnCopiar);
   }
 
-  // Envia para a planilha (Google Apps Script)
-  // Se já existe um pedidoAtualId (ex.: usuário clicou em "Editar pedido" e
-  // está finalizando de novo), ele é reenviado para ATUALIZAR a mesma linha.
+  // Envio para o Google Apps Script (Google Sheets)
   enviarPedidoAPI({
     id_pedido: pedidoAtualId,
     cliente: nome,
     telefone: telefone,
-    endereco: localizacao ? `${endereco} (GPS: ${localizacao})` : endereco,
+    tipo_recebimento: tipoRecebimento,
+    endereco: ehEntrega ? (localizacao ? `${endereco} (GPS: ${localizacao})` : endereco) : 'Retirada no Local',
     pagamento: pagamento,
     observacao: obs,
-    total: subtotal,
+    subtotal: subtotal,
+    taxa_entrega: taxaEntrega,
+    total: totalGeral,
     itens: carrinho.map(item => ({
       produto: item.nome,
       quantidade: item.qtd,
+      preco_unitario: item.precoUnitario,
       detalhes: item.detalhes ? item.detalhes.replace(/<br>/g, ' | ') : ''
     }))
   });
