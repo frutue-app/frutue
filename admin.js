@@ -1,20 +1,6 @@
-// Lista padrão de frutas
-const frutasPadrao = [
-  { id: 'morango', nome: 'Morango 🍓', disponivel: true },
-  { id: 'banana', nome: 'Banana 🍌', disponivel: true },
-  { id: 'maca', nome: 'Maçã 🍎', disponivel: true },
-  { id: 'uva', nome: 'Uva 🍇', disponivel: true },
-  { id: 'kiwi', nome: 'Kiwi 🥝', disponivel: true },
-  { id: 'manga', nome: 'Manga 🥭', disponivel: true },
-  { id: 'abacaxi', nome: 'Abacaxi 🍍', disponivel: true },
-  { id: 'mamao', nome: 'Mamão 🍑', disponivel: true },
-  { id: 'melancia', nome: 'Melancia 🍉', disponivel: true },
-  { id: 'melao', nome: 'Melão 🍈', disponivel: true }
-];
-// Verifica a senha se tentar entrar diretamente pela URL
-(function verificarAcessoDirecto() {
+// Autenticação da sessão
+(function verificarAcesso() {
   const autorizacao = sessionStorage.getItem('admin_autenticado');
-
   if (!autorizacao) {
     const senha = prompt("Acesso restrito. Digite a senha do Administrador:");
     if (senha === "Frutue@2026") {
@@ -24,41 +10,74 @@ const frutasPadrao = [
       window.location.href = "index.html";
     }
   }
-  
 })();
-// Carrega ou inicializa a disponibilidade
-function obterEstoqueFrutas() {
-  const salvo = localStorage.getItem('frutue_estoque_frutas');
-  return salvo ? JSON.parse(salvo) : frutasPadrao;
+
+// Lista geral de todos os produtos gerenciáveis
+const produtosPadrao = [
+  // Frutas
+  { id: "morango", nome: "Morango 🍓", categoria: "Frutas", disponivel: true },
+  { id: "banana", nome: "Banana 🍌", categoria: "Frutas", disponivel: true },
+  { id: "maca", nome: "Maçã 🍎", categoria: "Frutas", disponivel: true },
+  { id: "uva", nome: "Uva 🍇", categoria: "Frutas", disponivel: true },
+  { id: "kiwi", nome: "Kiwi 🥝", categoria: "Frutas", disponivel: true },
+  { id: "manga", nome: "Manga 🥭", categoria: "Frutas", disponivel: true },
+  { id: "abacaxi", nome: "Abacaxi 🍍", categoria: "Frutas", disponivel: true },
+  { id: "mamao", nome: "Mamão 🍑", categoria: "Frutas", disponivel: true },
+  { id: "melancia", nome: "Melancia 🍉", categoria: "Frutas", disponivel: true },
+  { id: "melao", nome: "Melão 🍈", categoria: "Frutas", disponivel: true },
+
+  // Categorias de Saladas
+  { id: "salada_simples", nome: "Salada Simples", categoria: "Saladas", disponivel: true },
+  { id: "salada_peso", nome: "Salada por Peso", categoria: "Saladas", disponivel: true },
+  { id: "dulce_fit", nome: "Dulce Fit", categoria: "Saladas Gourmet", disponivel: true },
+  { id: "iogurte_natural", nome: "Iogurte Natural", categoria: "Saladas Gourmet", disponivel: true },
+  { id: "iogurte_whey", nome: "Iogurte + Whey", categoria: "Saladas Gourmet", disponivel: true },
+  { id: "creme_whey", nome: "Creme de Whey", categoria: "Saladas Gourmet", disponivel: true },
+  { id: "creme_ninho", nome: "Creme de Ninho", categoria: "Saladas Gourmet", disponivel: true },
+  { id: "nutella", nome: "Nutella", categoria: "Saladas Gourmet", disponivel: true },
+
+  // Outros Produtos
+  { id: "frango_desfiado", nome: "Frango Desfiado", categoria: "Proteínas", disponivel: true },
+  { id: "sanduiche_natural", nome: "Sanduíche Natural", categoria: "Sanduíches", disponivel: true },
+  { id: "suco_detox", nome: "Suco Detox", categoria: "Bebidas", disponivel: true }
+];
+
+function obterEstoqueGeral() {
+  const salvo = localStorage.getItem('frutue_estoque_geral');
+  return salvo ? JSON.parse(salvo) : produtosPadrao;
 }
 
-function salvarEstoqueFrutas(estoque) {
-  localStorage.setItem('frutue_estoque_frutas', JSON.stringify(estoque));
+function salvarEstoqueGeral(estoque) {
+  localStorage.setItem('frutue_estoque_geral', JSON.stringify(estoque));
 }
 
-// Renderiza a lista no Admin
-function renderizarAdmin() {
-  const container = document.getElementById('adminFrutasList');
-  const estoque = obterEstoqueFrutas();
-  
-  container.innerHTML = estoque.map(item => `
-    <div class="item-row">
-      <span><strong>${item.nome}</strong></span>
-      <label class="switch">
-        <input type="checkbox" ${item.disponivel ? 'checked' : ''} onchange="alterarStatusFruta('${item.id}', this.checked)">
-        <span class="slider"></span>
-      </label>
-    </div>
+function renderizarPainelAdmin() {
+  const container = document.getElementById('adminCategoriasContainer');
+  const estoque = obterEstoqueGeral();
+
+  const categorias = [...new Set(estoque.map(i => i.categoria))];
+
+  container.innerHTML = categorias.map(cat => `
+    <div class="sec-header">${cat}</div>
+    ${estoque.filter(i => i.categoria === cat).map(item => `
+      <div class="item-row">
+        <span>${item.nome}</span>
+        <label class="switch">
+          <input type="checkbox" ${item.disponivel ? 'checked' : ''} onchange="alterarStatus('${item.id}', this.checked)">
+          <span class="slider"></span>
+        </label>
+      </div>
+    `).join('')}
   `).join('');
 }
 
-function alterarStatusFruta(id, status) {
-  const estoque = obterEstoqueFrutas();
-  const fruta = estoque.find(f => f.id === id);
-  if (fruta) {
-    fruta.disponivel = status;
-    salvarEstoqueFrutas(estoque);
+function alterarStatus(id, status) {
+  const estoque = obterEstoqueGeral();
+  const item = estoque.find(i => i.id === id);
+  if (item) {
+    item.disponivel = status;
+    salvarEstoqueGeral(estoque);
   }
 }
 
-document.addEventListener('DOMContentLoaded', renderizarAdmin);
+document.addEventListener('DOMContentLoaded', renderizarPainelAdmin);
