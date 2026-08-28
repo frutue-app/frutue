@@ -78,26 +78,50 @@ let montadorQtd = 1;
 let gourmetTipoAtual = '';
 let sacolaoQtds = {};
 window.pedidoAtualId = null;
+window.estoqueAtual = null;
+
+// Busca o estoque/disponibilidade atual no servidor (planilha). Isso é o que
+// garante que a disponibilidade definida pelo Admin apareça para TODOS os
+// clientes, não só no navegador de quem editou.
+function carregarEstoqueDoServidor() {
+  if (!CONFIG.apiUrl) return Promise.resolve(null);
+
+  return fetch(`${CONFIG.apiUrl}?action=estoque`)
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.ok && Array.isArray(data.estoque)) {
+        window.estoqueAtual = data.estoque;
+        // Mantém uma cópia local só como fallback caso a rede falhe depois.
+        localStorage.setItem('frutue_estoque_geral', JSON.stringify(data.estoque));
+      }
+      return window.estoqueAtual;
+    })
+    .catch(err => {
+      console.warn('[Frutue][estoque] Falha ao buscar estoque do servidor, usando cache local (se houver).', err);
+      const cache = localStorage.getItem('frutue_estoque_geral');
+      window.estoqueAtual = cache ? JSON.parse(cache) : null;
+      return window.estoqueAtual;
+    });
+}
 
 // ===================== INICIALIZAÇÃO =====================
 document.addEventListener('DOMContentLoaded', () => {
   renderizarListaFrutasPeso();
   // renderizarSacolao(); // Removido para evitar Uncaught ReferenceError
-  aplicarDisponibilidadeEstoque();
+  carregarEstoqueDoServidor().then(() => aplicarDisponibilidadeEstoque());
   atualizarCarrinhoUI();
 });
 
-// Função auxiliar de diagnóstico. Abra o Console do navegador (F12) tanto na
-// página do Admin quanto na página principal e rode: debugEstoqueFrutue()
+// Função auxiliar de diagnóstico. Abra o Console do navegador (F12) e rode:
+// debugEstoqueFrutue()
 window.debugEstoqueFrutue = function () {
-  const salvo = localStorage.getItem('frutue_estoque_geral');
   console.log('URL atual:', window.location.href);
-  console.log('Conteúdo de localStorage["frutue_estoque_geral"]:', salvo);
-  if (salvo) {
-    console.table(JSON.parse(salvo));
-  } else {
-    console.warn('Nada foi encontrado. Isso indica que esta página não está enxergando o mesmo localStorage usado pelo Admin (domínio/protocolo diferente, ou é a primeira vez que o Admin roda).');
-  }
+  console.log('window.estoqueAtual (o que a página está usando agora):', window.estoqueAtual);
+  if (window.estoqueAtual) console.table(window.estoqueAtual);
+  carregarEstoqueDoServidor().then(estoque => {
+    console.log('Resposta atual do servidor (Google Sheets):', estoque);
+    if (estoque) console.table(estoque);
+  });
 };
 
 // ===================== CONTROLE DE DISPONIBILIDADE (ADMIN) =====================
@@ -114,14 +138,17 @@ function normalizarNomeProduto(str) {
 }
 
 function aplicarDisponibilidadeEstoque() {
-  const estoqueSalvo = localStorage.getItem('frutue_estoque_geral');
-  if (!estoqueSalvo) {
-    console.warn('[Frutue][estoque] Nenhum estoque salvo encontrado em localStorage (chave "frutue_estoque_geral"). Nada será desabilitado.');
+  if (!window.estoqueAtual) {
+    // Ainda não carregou do servidor (ex: modal aberto muito rápido). Busca
+    // e reaplica assim que chegar.
+    carregarEstoqueDoServidor().then(estoque => {
+      if (estoque) aplicarDisponibilidadeEstoque();
+    });
     return;
   }
 
-  const estoque = JSON.parse(estoqueSalvo);
-  console.log('[Frutue][estoque] Estoque carregado:', estoque);
+  const estoque = window.estoqueAtual;
+  console.log('[Frutue][estoque] Aplicando disponibilidade com:', estoque);
 
   document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(input => {
     const val = normalizarNomeProduto(input.value);
@@ -172,9 +199,8 @@ function toggleCartDrawer(open) {
 }
 
 function adicionarItemDireto(nome, preco) {
-  const estoqueSalvo = localStorage.getItem('frutue_estoque_geral');
-  if (estoqueSalvo) {
-    const estoque = JSON.parse(estoqueSalvo);
+  const estoque = window.estoqueAtual;
+  if (estoque) {
     const nomeNormalizado = normalizarNomeProduto(nome);
     const item = estoque.find(e => {
       const nomeEstoque = normalizarNomeProduto(e.nome);
