@@ -87,6 +87,19 @@ document.addEventListener('DOMContentLoaded', () => {
   atualizarCarrinhoUI();
 });
 
+// Função auxiliar de diagnóstico. Abra o Console do navegador (F12) tanto na
+// página do Admin quanto na página principal e rode: debugEstoqueFrutue()
+window.debugEstoqueFrutue = function () {
+  const salvo = localStorage.getItem('frutue_estoque_geral');
+  console.log('URL atual:', window.location.href);
+  console.log('Conteúdo de localStorage["frutue_estoque_geral"]:', salvo);
+  if (salvo) {
+    console.table(JSON.parse(salvo));
+  } else {
+    console.warn('Nada foi encontrado. Isso indica que esta página não está enxergando o mesmo localStorage usado pelo Admin (domínio/protocolo diferente, ou é a primeira vez que o Admin roda).');
+  }
+};
+
 // ===================== CONTROLE DE DISPONIBILIDADE (ADMIN) =====================
 
 // Remove emojis, espaços extras e diferenças de maiúsculas/minúsculas para
@@ -102,9 +115,13 @@ function normalizarNomeProduto(str) {
 
 function aplicarDisponibilidadeEstoque() {
   const estoqueSalvo = localStorage.getItem('frutue_estoque_geral');
-  if (!estoqueSalvo) return;
+  if (!estoqueSalvo) {
+    console.warn('[Frutue][estoque] Nenhum estoque salvo encontrado em localStorage (chave "frutue_estoque_geral"). Nada será desabilitado.');
+    return;
+  }
 
   const estoque = JSON.parse(estoqueSalvo);
+  console.log('[Frutue][estoque] Estoque carregado:', estoque);
 
   document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(input => {
     const val = normalizarNomeProduto(input.value);
