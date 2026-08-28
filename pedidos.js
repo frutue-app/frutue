@@ -1,4 +1,4 @@
-let pedidoAtualId = null;
+window.pedidoAtualId = window.pedidoAtualId || null;
 
 function gerarPedido() {
   const nome = document.getElementById('nomeInput').value.trim();
@@ -6,7 +6,7 @@ function gerarPedido() {
   const tipoRecebimento = document.getElementById('tipoRecebimentoSelect').value;
   const ehEntrega = tipoRecebimento === 'Entrega';
   const endereco = document.getElementById('enderecoInput').value.trim();
-  const localizacao = document.getElementById('localizacaoHidden').value;
+  const localizacao = document.getElementById('localizacaoHidden') ? document.getElementById('localizacaoHidden').value : '';
   const pagamento = document.getElementById('pagamentoSelect').value;
   const obs = document.getElementById('observacaoInput').value.trim();
 
@@ -50,7 +50,9 @@ function gerarPedido() {
   // Tela final
   document.getElementById('resumoTexto').textContent = resumo;
   document.getElementById('formArea').style.display = 'none';
-  document.querySelector('.total-bar').style.display = 'none';
+  if (document.querySelector('.total-bar')) {
+    document.querySelector('.total-bar').style.display = 'none';
+  }
   document.getElementById('resultado').style.display = 'block';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -68,10 +70,18 @@ function gerarPedido() {
     qrArea.style.alignItems = 'center';
     qrArea.style.textAlign = 'center';
 
+    const payloadPix = montarPayloadPix(
+      CONFIG.pixChave,
+      CONFIG.pixNomeRecebedor,
+      CONFIG.pixCidade,
+      totalGeral,
+      'FRUTUE'
+    );
+
     const aviso = document.createElement('p');
     aviso.style.marginBottom = '8px';
     aviso.style.fontSize = '0.85rem';
-    aviso.textContent = `Chave Pix (copia e cola): ${CONFIG.pixChave} — ${CONFIG.pixNomeRecebedor}`;
+    aviso.textContent = `Escaneie o QR Code abaixo para pagar R$ ${totalGeral.toFixed(2).replace('.', ',')}:`;
     qrArea.appendChild(aviso);
 
     const qrDiv = document.createElement('div');
@@ -79,24 +89,25 @@ function gerarPedido() {
     qrArea.appendChild(qrDiv);
 
     new QRCode(qrDiv, {
-      text: CONFIG.pixChave,
-      width: 180,
-      height: 180
+      text: payloadPix,
+      width: 200,
+      height: 200,
+      correctLevel: QRCode.CorrectLevel.M
     });
 
     const btnCopiar = document.createElement('button');
     btnCopiar.type = 'button';
     btnCopiar.className = 'btn-secondary';
     btnCopiar.style.marginTop = '12px';
-    btnCopiar.style.maxWidth = '220px';
-    btnCopiar.textContent = '📋 Copiar Chave Pix';
-    btnCopiar.onclick = () => copiarChavePix(btnCopiar);
+    btnCopiar.style.maxWidth = '260px';
+    btnCopiar.textContent = '📋 Copiar Código Pix (Copia e Cola)';
+    btnCopiar.onclick = () => copiarChavePix(btnCopiar, payloadPix);
     qrArea.appendChild(btnCopiar);
   }
 
   // Envio para o Google Apps Script (Google Sheets)
   enviarPedidoAPI({
-    id_pedido: pedidoAtualId,
+    id_pedido: window.pedidoAtualId,
     cliente: nome,
     telefone: telefone,
     tipo_recebimento: tipoRecebimento,
@@ -115,21 +126,21 @@ function gerarPedido() {
   });
 }
 
-function copiarChavePix(botao) {
-  const chave = CONFIG.pixChave;
+function copiarChavePix(botao, payload) {
+  const textoParaCopiar = payload || CONFIG.pixChave;
   const textoOriginal = botao.textContent;
 
   const marcarSucesso = () => {
-    botao.textContent = '✅ Chave copiada!';
+    botao.textContent = '✅ Código copiado!';
     setTimeout(() => { botao.textContent = textoOriginal; }, 2000);
   };
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(chave).then(marcarSucesso).catch(() => {
-      copiarChavePixFallback(chave, marcarSucesso);
+    navigator.clipboard.writeText(textoParaCopiar).then(marcarSucesso).catch(() => {
+      copiarChavePixFallback(textoParaCopiar, marcarSucesso);
     });
   } else {
-    copiarChavePixFallback(chave, marcarSucesso);
+    copiarChavePixFallback(textoParaCopiar, marcarSucesso);
   }
 }
 
@@ -154,7 +165,9 @@ function copiarChavePixFallback(texto, onSucesso) {
 function voltar() {
   document.getElementById('resultado').style.display = 'none';
   document.getElementById('formArea').style.display = '';
-  document.querySelector('.total-bar').style.display = '';
+  if (document.querySelector('.total-bar')) {
+    document.querySelector('.total-bar').style.display = '';
+  }
   document.getElementById('envioStatus').textContent = '';
 }
 
@@ -171,7 +184,7 @@ function enviarPedidoAPI(pedido) {
     .then(res => res.json())
     .then(data => {
       if (data && data.id_pedido) {
-        pedidoAtualId = data.id_pedido;
+        window.pedidoAtualId = data.id_pedido;
       }
       status.textContent = '✅ Pedido registrado com sucesso!';
     })

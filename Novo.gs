@@ -1,6 +1,6 @@
 /**
  * FRUTUE - Backend Simplificado
- * Aba única: PEDIDOS (Com soma automática e formatação R$ via código)
+ * Aba única: PEDIDOS (Com soma automática, formatação R$ e Divisória Mensal)
  */
 
 const SHEET_NAME = 'PEDIDOS';
@@ -65,115 +65,199 @@ function doGet(e) {
 }
 
 function doPost(e) {
-  let body;
-  try {
-    body = JSON.parse(e.postData.contents);
-  } catch (err) {
-    return jsonResponse({ ok: false, error: 'JSON inválido no corpo da requisição.' });
-  }
+  // Impede que requisições simultâneas façam o script travar ou criar linhas sobrepostas
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
 
   try {
-    return jsonResponse(criarPedido(body));
+    let body;
+    try {
+      body = JSON.parse(e.postData.contents);
+    } catch (err) {
+      return jsonResponse({ ok: false, error: 'JSON inválido no corpo da requisição.' });
+    }
+
+    const dadosPedido = body.pedido ? body.pedido : body;
+    return jsonResponse(criarPedido(dadosPedido));
   } catch (err) {
     return jsonResponse({ ok: false, error: err.message });
+  } finally {
+    lock.releaseLock();
   }
 }
 
-// ===================== CRIAÇÃO DE PEDIDO =====================
+// ===================== CRIAÇÃO / ATUALIZAÇÃO DE PEDIDO =====================
 
 function criarPedido(dados) {
-  if (!dados || !dados.cliente) {
+  if (!dados || (!dados.cliente && !dados.clienteNome)) {
     return { ok: false, error: 'Dados incompletos do cliente.' };
   }
 
   const sheet = getSheet();
-  const ultimaLinha = sheet.getLastRow();
-  
-  // Número sequencial do pedido (começa em 1 a partir da linha 4)
-  const numeroPedido = ultimaLinha < 3 ? 1 : (ultimaLinha - 2);
+  const valorTotalNum = Number(dados.total || dados.valor_total || dados.valorTotal || 0);
 
-  const valorTotalNum = Number(dados.total || dados.valor_total || 0);
+  // Normaliza o nome do cliente e forma de pagamento
+  const clienteNome = dados.cliente || dados.clienteNome || '';
+  const formaPagamento = dados.forma_pagamento || dados.pagamento || dados.formaPagamento || '';
+  const observacao = dados.observacao || dados.troco || '';
+  const endereco = dados.endereco || '';
 
   // Formata os itens se vierem em lista/array
   let itensFormatados = dados.itens || '';
   if (Array.isArray(dados.itens)) {
     itensFormatados = dados.itens.map(item => {
       if (typeof item === 'string') return item;
-      return `${item.quantidade || 1}x ${item.produto || item.nome} ${item.detalhes ? '(' + item.detalhes + ')' : ''}`;
+      return `${item.quantidade || item.qtd || 1}x ${item.produto || item.nome} ${item.detalhes ? '(' + item.detalhes + ')' : ''}`;
     }).join(', ');
   }
 
-  // Insere a nova linha com o valor já formatado em R$ 00,00
+  const idPedido = dados.id_pedido || dados.idPedido;
+
+  // Se veio um id e ele já existe na planilha, ATUALIZA a linha existente
+  if (idPedido) {
+    const linhaExistente = encontrarLinhaPeloId(sheet, idPedido);
+    if (linhaExistente) {
+      sheet.getRange(linhaExistente, 1, 1, HEADERS.length).setValues([[
+        idPedido,
+        new Date(),
+        clienteNome,
+        endereco,
+        itensFormatados,
+        formaPagamento,
+        observacao,
+        'Pendente',
+        formatarReais(valorTotalNum)
+      ]]);
+
+      atualizarTotaisViaCodigo(sheet);
+
+      return {
+        ok: true,
+        id_pedido: idPedido,
+        valor_registrado: formatarReais(valorTotalNum),
+        atualizado: true
+      };
+    }
+  }
+
+  // Verificar e Criar Divisória do Mês se mudou o mês
+  garantirDivisoriaDoMes(sheet);
+
+  // Gera o ID Sequencial do pedido
+  const novoId = idPedido || (Date.now());
+
+  // Insere a nova linha
   sheet.appendRow([
-    numeroPedido,                                   // A: ID
-    new Date(),                                     // B: Data/Hora
-    dados.cliente || '',                            // C: Cliente
-    dados.endereco || '',                           // D: Endereço
-    itensFormatados,                                // E: Itens
-    dados.forma_pagamento || dados.pagamento || '',    // F: Pagamento
-    dados.observacao || dados.troco || '',          // G: Troco/Obs
-    'Pendente',                                     // H: Status
-    formatarReais(valorTotalNum)                    // I: Valor em R$ 00,00
+    novoId,                         // A: ID
+    new Date(),                     // B: Data/Hora
+    clienteNome,                    // C: Cliente
+    endereco,                       // D: Endereço
+    itensFormatados,                // E: Itens
+    formaPagamento,                 // F: Pagamento
+    observacao,                     // G: Troco/Obs
+    'Pendente',                     // H: Status
+    formatarReais(valorTotalNum)    // I: Valor em R$ 00,00
   ]);
 
   // Recalcula e atualiza os totais via código no topo da folha
   atualizarTotaisViaCodigo(sheet);
 
-  return { 
-    ok: true, 
-    id_pedido: numeroPedido,
+  return {
+    ok: true,
+    id_pedido: novoId,
     valor_registrado: formatarReais(valorTotalNum)
   };
 }
 
-// ===================== CÁLCULO E ATUALIZAÇÃO VIA CÓDIGO =====================
+// ===================== DIVISÓRIA MENSAL AUTOMÁTICA =====================
+
+function garantirDivisoriaDoMes(sheet) {
+  const dataAtual = new Date();
+  const mesAnoFormatado = Utilities.formatDate(dataAtual, "GMT-03:00", "MM/yyyy");
+  const mesNome = getNomeMes(dataAtual.getMonth());
+  const tituloDivisoria = mesNome.toUpperCase() + " — " + mesAnoFormatado;
+
+  const ultimaLinha = sheet.getLastRow();
+
+  if (ultimaLinha > 3) {
+    const finder = sheet.createTextFinder(tituloDivisoria).findAll();
+    if (finder.length > 0) {
+      return; // A divisória deste mês já existe na planilha
+    }
+  }
+
+  // Cria uma linha em branco para espaçamento + linha com título estilizado
+  sheet.appendRow([""]); 
+  sheet.appendRow([tituloDivisoria]);
+
+  const novaLinhaDivisoria = sheet.getLastRow();
+  const range = sheet.getRange(novaLinhaDivisoria, 1, 1, HEADERS.length);
+  
+  range.setFontWeight("bold");
+  range.setBackground("#2E7D32"); // Verde Frutue
+  range.setFontColor("#FFFFFF");
+  range.merge();
+}
+
+function getNomeMes(mesIndex) {
+  const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  return meses[mesIndex];
+}
+
+// ===================== UTILITÁRIOS E BUSCA =====================
+
+function encontrarLinhaPeloId(sheet, id) {
+  const ultimaLinha = sheet.getLastRow();
+  if (ultimaLinha <= 3) return null;
+
+  const idsColuna = sheet.getRange(4, 1, ultimaLinha - 3, 1).getValues();
+  for (let i = 0; i < idsColuna.length; i++) {
+    if (String(idsColuna[i][0]) === String(id)) {
+      return i + 4;
+    }
+  }
+  return null;
+}
 
 function atualizarTotaisViaCodigo(sheet) {
   const ultimaLinha = sheet.getLastRow();
-  
-  // Se não houver pedidos abaixo do cabeçalho
+
   if (ultimaLinha <= 3) {
     sheet.getRange('B1').setValue(0);
     sheet.getRange('E1').setValue(formatarReais(0));
     return;
   }
 
-  // Pega todas as linhas de pedidos registradas (da linha 4 até a última)
   const valoresColunaTotal = sheet.getRange(4, 9, ultimaLinha - 3, 1).getValues();
-  
+
   let somaTotal = 0;
   let qtdPedidos = 0;
 
   valoresColunaTotal.forEach(linha => {
     const valorTexto = String(linha[0]);
-    if (valorTexto) {
-      // Extrai apenas os números da string (Ex: "R$ 15,50" -> 15.50)
+    if (valorTexto && !valorTexto.includes('—')) { // Ignora as linhas de divisória do mês
       const valorLimpo = valorTexto
         .replace('R$', '')
         .replace(/\s/g, '')
         .replace('.', '')
         .replace(',', '.');
-      
+
       const num = parseFloat(valorLimpo);
-      if (!isNaN(num)) {
+      if (!isNaN(num) && num > 0) {
         somaTotal += num;
         qtdPedidos++;
       }
     }
   });
 
-  // Escreve os resultados direto nas células B1 e E1 via código
   sheet.getRange('B1').setValue(qtdPedidos);
   sheet.getRange('E1').setValue(formatarReais(somaTotal));
 }
 
-// Formata números no padrão R$ 00,00 (ex: 7 -> "R$ 7,00")
 function formatarReais(valor) {
   const numero = Number(valor) || 0;
   return 'R$ ' + numero.toFixed(2).replace('.', ',');
 }
-
-// ===================== UTILIDADES =====================
 
 function getSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
