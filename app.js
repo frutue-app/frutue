@@ -88,6 +88,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===================== CONTROLE DE DISPONIBILIDADE (ADMIN) =====================
+
+// Remove emojis, espaços extras e diferenças de maiúsculas/minúsculas para
+// permitir comparar "Morango" (valor usado nos checkboxes dos modais) com
+// "Morango 🍓" (nome cadastrado no Painel Admin).
+function normalizarNomeProduto(str) {
+  return (str || '')
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\uFE0F]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 function aplicarDisponibilidadeEstoque() {
   const estoqueSalvo = localStorage.getItem('frutue_estoque_geral');
   if (!estoqueSalvo) return;
@@ -95,8 +107,12 @@ function aplicarDisponibilidadeEstoque() {
   const estoque = JSON.parse(estoqueSalvo);
 
   document.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(input => {
-    const val = input.value;
-    const itemEstoque = estoque.find(e => e.nome === val || val.includes(e.nome));
+    const val = normalizarNomeProduto(input.value);
+    if (!val) return;
+    const itemEstoque = estoque.find(e => {
+      const nomeEstoque = normalizarNomeProduto(e.nome);
+      return nomeEstoque === val || val.includes(nomeEstoque) || nomeEstoque.includes(val);
+    });
 
     if (itemEstoque) {
       const parent = input.closest('.opt-card') || input.closest('.peso-item-row') || input.parentElement;
@@ -120,8 +136,8 @@ function aplicarDisponibilidadeEstoque() {
   });
 
   document.querySelectorAll('[data-produto-nome]').forEach(btn => {
-    const nomeProd = btn.getAttribute('data-produto-nome');
-    const itemEstoque = estoque.find(e => e.nome === nomeProd);
+    const nomeProd = normalizarNomeProduto(btn.getAttribute('data-produto-nome'));
+    const itemEstoque = estoque.find(e => normalizarNomeProduto(e.nome) === nomeProd);
     if (itemEstoque && !itemEstoque.disponivel) {
       btn.disabled = true;
       btn.style.opacity = '0.5';
@@ -142,7 +158,11 @@ function adicionarItemDireto(nome, preco) {
   const estoqueSalvo = localStorage.getItem('frutue_estoque_geral');
   if (estoqueSalvo) {
     const estoque = JSON.parse(estoqueSalvo);
-    const item = estoque.find(e => e.nome === nome);
+    const nomeNormalizado = normalizarNomeProduto(nome);
+    const item = estoque.find(e => {
+      const nomeEstoque = normalizarNomeProduto(e.nome);
+      return nomeEstoque === nomeNormalizado || nomeNormalizado.includes(nomeEstoque) || nomeEstoque.includes(nomeNormalizado);
+    });
     if (item && !item.disponivel) {
       alert(`Desculpe, o item "${nome}" está indisponível hoje.`);
       return;
