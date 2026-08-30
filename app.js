@@ -1,7 +1,7 @@
 // ===================== CONFIGURAÇÃO GERAL =====================
 const CONFIG = {
-  whatsappNumero: "558695948843",
-  pixChave: "09002037309", 
+  whatsappNumero: "5586981949977",
+  pixChave: "86981949977", 
   pixNomeRecebedor: "FRUTUE",
   pixCidade: "PEDRO II",
   taxaEntrega: 2.00,
