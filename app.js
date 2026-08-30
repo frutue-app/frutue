@@ -2,7 +2,7 @@
 const CONFIG = {
   whatsappNumero: "5586981949977",
   pixChave: "86981949977", 
-  pixNomeRecebedor: "FRUTUE",
+  pixNomeRecebedor: "Francisco das Chagas Gomes", //
   pixCidade: "PEDRO II",
   taxaEntrega: 2.00,
   apiUrl: "https://script.google.com/macros/s/AKfycbxHTowPSlJ_fvKNFYJprhugOyLBhdA4rdvUWjz4wWFWCVDx-Jbwdr71aO7Q2vee7pxWNw/exec"
