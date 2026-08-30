@@ -1,495 +1,629 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Frutue - Faça seu Pedido</title>
-  
-  <link rel="icon" type="image/jpeg" href="img/logo.jpg">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+<!DOCTYPE html> <html lang="pt-BR"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/jpeg" href="img/logo.jpg">
 
-  <header class="app-header">
-    <div class="header-content">
-      <img src="img/logo.jpg" alt="Frutue Logo" class="header-logo">
-      <div class="header-text">
-        <h1>Frutue</h1>
-        <p>Alimentação saudável e natural</p>
-      </div>
+<title>Escolha seu atendimento</title>
+
+<style>
+    /* ================================
+       RESET
+    ================================= */
+
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* ================================
+       VARIÁVEIS
+    ================================= */
+
+    :root {
+        --verde: #238b4d;
+        --verde-escuro: #176b3a;
+
+        --whatsapp: #25d366;
+        --whatsapp-escuro: #16a34a;
+
+        --texto: #17201a;
+        --texto-secundario: #66736b;
+
+        --raio-card: 24px;
+        --raio-botao: 15px;
+
+        --sombra-card:
+            0 25px 70px rgba(0, 0, 0, 0.25);
+
+        --transicao:
+            0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ================================
+       BODY
+    ================================= */
+
+    body {
+        min-height: 100vh;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        padding: 24px;
+
+        font-family:
+            Inter,
+            -apple-system,
+            BlinkMacSystemFont,
+            "Segoe UI",
+            Roboto,
+            Arial,
+            sans-serif;
+
+        color: var(--texto);
+
+        background:
+            linear-gradient(
+                135deg,
+                rgba(10, 35, 20, 0.78),
+                rgba(0, 0, 0, 0.48)
+            ),
+            url("img/fundo.jpg") center / cover no-repeat fixed;
+
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* ================================
+       EFEITOS DO FUNDO
+    ================================= */
+
+    body::before {
+        content: "";
+
+        position: fixed;
+
+        width: 420px;
+        height: 420px;
+
+        top: -180px;
+        right: -150px;
+
+        background: rgba(37, 211, 102, 0.18);
+
+        border-radius: 50%;
+
+        filter: blur(80px);
+
+        pointer-events: none;
+    }
+
+    body::after {
+        content: "";
+
+        position: fixed;
+
+        width: 350px;
+        height: 350px;
+
+        bottom: -180px;
+        left: -150px;
+
+        background: rgba(35, 139, 77, 0.18);
+
+        border-radius: 50%;
+
+        filter: blur(80px);
+
+        pointer-events: none;
+    }
+
+    /* ================================
+       CARD
+    ================================= */
+
+    .card {
+        position: relative;
+        z-index: 1;
+
+        width: 100%;
+        max-width: 470px;
+
+        padding: 42px 36px 34px;
+
+        background: rgba(255, 255, 255, 0.97);
+
+        border: 1px solid rgba(255, 255, 255, 0.7);
+
+        border-radius: var(--raio-card);
+
+        box-shadow: var(--sombra-card);
+
+        text-align: center;
+
+        animation:
+            cardEntrada 0.65s
+            cubic-bezier(0.2, 0.8, 0.2, 1)
+            both;
+    }
+
+    @keyframes cardEntrada {
+        from {
+            opacity: 0;
+            transform: translateY(25px) scale(0.97);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* ================================
+       LOGO
+    ================================= */
+
+    .logo-container {
+        display: flex;
+        justify-content: center;
+
+        margin-bottom: 22px;
+    }
+
+    .logo {
+        width: 88px;
+        height: 88px;
+
+        object-fit: cover;
+
+        border-radius: 50%;
+
+        border: 4px solid #ffffff;
+
+        box-shadow:
+            0 8px 25px rgba(0, 0, 0, 0.15);
+
+        background: #f5f5f5;
+    }
+
+    /* ================================
+       TÍTULO
+    ================================= */
+
+    h1 {
+        font-size: clamp(1.45rem, 5vw, 1.8rem);
+
+        font-weight: 750;
+
+        letter-spacing: -0.5px;
+
+        line-height: 1.2;
+
+        color: var(--texto);
+
+        margin-bottom: 11px;
+    }
+
+    .descricao {
+        max-width: 350px;
+
+        margin: 0 auto 30px;
+
+        color: var(--texto-secundario);
+
+        font-size: 0.98rem;
+
+        line-height: 1.55;
+    }
+
+    /* ================================
+       OPÇÕES
+    ================================= */
+
+    .opcoes {
+        display: flex;
+        flex-direction: column;
+
+        gap: 14px;
+    }
+
+    /* ================================
+       BOTÕES
+    ================================= */
+
+    .botao {
+        position: relative;
+
+        width: 100%;
+        min-height: 68px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        gap: 13px;
+
+        padding: 15px 22px;
+
+        border: none;
+        border-radius: var(--raio-botao);
+
+        color: #ffffff;
+
+        font-family: inherit;
+
+        font-size: 1.02rem;
+        font-weight: 700;
+
+        text-decoration: none;
+
+        cursor: pointer;
+
+        overflow: hidden;
+
+        transition:
+            transform var(--transicao),
+            box-shadow var(--transicao),
+            filter var(--transicao);
+    }
+
+    /* Brilho do botão */
+
+    .botao::before {
+        content: "";
+
+        position: absolute;
+
+        inset: 0;
+
+        background:
+            linear-gradient(
+                120deg,
+                rgba(255, 255, 255, 0.13),
+                transparent 45%
+            );
+
+        pointer-events: none;
+    }
+
+    .botao:hover {
+        transform: translateY(-3px);
+
+        filter: brightness(1.04);
+    }
+
+    .botao:active {
+        transform: translateY(0) scale(0.985);
+    }
+
+    .botao:focus-visible {
+        outline: 3px solid rgba(35, 139, 77, 0.25);
+
+        outline-offset: 3px;
+    }
+
+    /* ================================
+       ÍCONE
+    ================================= */
+
+    .icone {
+        width: 42px;
+        height: 42px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        flex-shrink: 0;
+
+        border-radius: 12px;
+
+        background: rgba(255, 255, 255, 0.15);
+
+        font-size: 1.35rem;
+    }
+
+    /* ================================
+       TEXTO DO BOTÃO
+    ================================= */
+
+    .texto-botao {
+        flex: 1;
+
+        text-align: left;
+    }
+
+    .texto-botao strong {
+        display: block;
+
+        font-size: 1.03rem;
+
+        line-height: 1.3;
+    }
+
+    .texto-botao small {
+        display: block;
+
+        margin-top: 3px;
+
+        font-size: 0.78rem;
+
+        font-weight: 500;
+
+        opacity: 0.82;
+    }
+
+    /* ================================
+       SETA
+    ================================= */
+
+    .seta {
+        font-size: 1.5rem;
+
+        line-height: 1;
+
+        opacity: 0.75;
+
+        transition:
+            transform var(--transicao);
+    }
+
+    .botao:hover .seta {
+        transform: translateX(4px);
+    }
+
+    /* ================================
+       BOTÃO SITE
+    ================================= */
+
+    .site {
+        background:
+            linear-gradient(
+                135deg,
+                var(--verde),
+                var(--verde-escuro)
+            );
+
+        box-shadow:
+            0 8px 20px rgba(35, 139, 77, 0.28);
+    }
+
+    .site:hover {
+        box-shadow:
+            0 12px 28px rgba(35, 139, 77, 0.40);
+    }
+
+    /* ================================
+       BOTÃO WHATSAPP
+    ================================= */
+
+    .whatsapp {
+        background:
+            linear-gradient(
+                135deg,
+                var(--whatsapp),
+                var(--whatsapp-escuro)
+            );
+
+        box-shadow:
+            0 8px 20px rgba(37, 211, 102, 0.25);
+    }
+
+    .whatsapp:hover {
+        box-shadow:
+            0 12px 28px rgba(37, 211, 102, 0.38);
+    }
+
+    /* ================================
+       DIVISOR
+    ================================= */
+
+    .divisor {
+        display: flex;
+
+        align-items: center;
+
+        gap: 12px;
+
+        margin: 23px 0 20px;
+
+        color: #9aa49e;
+
+        font-size: 0.72rem;
+
+        font-weight: 600;
+
+        text-transform: uppercase;
+
+        letter-spacing: 0.8px;
+    }
+
+    .divisor::before,
+    .divisor::after {
+        content: "";
+
+        height: 1px;
+
+        flex: 1;
+
+        background: #e4e8e5;
+    }
+
+    /* ================================
+       RODAPÉ
+    ================================= */
+
+    .rodape {
+        color: #8a948e;
+
+        font-size: 0.78rem;
+
+        line-height: 1.4;
+    }
+
+    /* ================================
+       RESPONSIVIDADE
+    ================================= */
+
+    @media (max-width: 520px) {
+
+        body {
+            padding: 16px;
+        }
+
+        .card {
+            padding: 32px 20px 26px;
+
+            border-radius: 21px;
+        }
+
+        .logo {
+            width: 76px;
+            height: 76px;
+        }
+
+        h1 {
+            font-size: 1.45rem;
+        }
+
+        .descricao {
+            font-size: 0.92rem;
+
+            margin-bottom: 24px;
+        }
+
+        .botao {
+            min-height: 64px;
+
+            padding: 13px 16px;
+        }
+
+        .icone {
+            width: 38px;
+            height: 38px;
+        }
+
+        .texto-botao strong {
+            font-size: 0.96rem;
+        }
+
+        .texto-botao small {
+            font-size: 0.74rem;
+        }
+    }
+
+    /* ================================
+       ACESSIBILIDADE
+    ================================= */
+
+    @media (prefers-reduced-motion: reduce) {
+
+        *,
+        *::before,
+        *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+    }
+</style>
+
+</head> <body>
+<main class="card">
+
+    <div class="logo-container">
+        <img
+            src="img/logo.jpg"
+            alt="Logo"
+            class="logo"
+        >
     </div>
-    
-    <div class="header-actions">
-      <button type="button" class="btn-cart-trigger" onclick="toggleCartDrawer(true)" aria-label="Abrir Carrinho">
-        🛒 Carrinho <span class="cart-badge" id="cartCount">0</span>
-      </button>
+
+    <h1>
+        Como deseja ser atendido?
+    </h1>
+
+    <p class="descricao">
+        Escolha uma das opções abaixo para realizar seu pedido.
+    </p>
+
+    <div class="opcoes">
+
+        <!-- ==========================================
+             BOTÃO 1 — SITE
+        =========================================== -->
+
+        <a
+            href="index.html"
+            class="botao site"
+            aria-label="Montar pedido pelo site"
+        >
+
+            <span class="icone">
+                🌐
+            </span>
+
+            <span class="texto-botao">
+                <strong>Monte pelo site</strong>
+
+                <small>
+                    Monte seu pedido de forma rápida e fácil
+                </small>
+            </span>
+
+            <span class="seta">
+                ›
+            </span>
+
+        </a>
+
+
+        <!-- ==========================================
+             BOTÃO 2 — WHATSAPP
+        =========================================== -->
+
+        <button
+            type="button"
+            class="botao whatsapp"
+            onclick="abrirWhatsAppDireto()"
+            aria-label="Pedir pelo WhatsApp"
+        >
+
+            <span class="icone">
+                💬
+            </span>
+
+            <span class="texto-botao">
+                <strong>Pedir pelo WhatsApp</strong>
+
+                <small>
+                    Fale diretamente com nosso atendimento
+                </small>
+            </span>
+
+            <span class="seta">
+                ›
+            </span>
+
+        </button>
+
     </div>
-  </header>
 
-  <!-- PAINEL DO CARRINHO LATERAL -->
-  <div class="cart-drawer-overlay" id="cartOverlay" onclick="toggleCartDrawer(false)"></div>
-  <aside class="cart-drawer" id="cartDrawer">
-    <div class="cart-header">
-      <h3>Seu Carrinho</h3>
-      <button type="button" class="btn-close-modal" onclick="toggleCartDrawer(false)">×</button>
+    <div class="divisor">
+        <span>
+            Escolha uma opção
+        </span>
     </div>
-    <div class="cart-body" id="cartList"></div>
-    <div class="cart-footer">
-      <div class="cart-summary">
-        <span>Subtotal:</span>
-        <strong id="cartSubtotal">R$ 0,00</strong>
-      </div>
-      <div class="cart-summary" id="cartTaxaEntregaRow" style="display: none; font-size: 0.88rem; color: var(--text-muted);">
-        <span>Taxa de Entrega:</span>
-        <strong id="cartTaxaEntrega">R$ 2,00</strong>
-      </div>
-      <div class="cart-summary" style="font-size: 1.1rem; border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 6px;">
-        <span>Total:</span>
-        <strong id="cartTotalGeral">R$ 0,00</strong>
-      </div>
-      <button type="button" class="btn-secondary" onclick="toggleCartDrawer(false)">Continuar Comprando</button>
-    </div>
-  </aside>
 
-  <main class="container" id="formArea">
+    <p class="rodape">
+        Atendimento rápido, simples e seguro.
+    </p>
 
-    <!-- 1. SALADAS SIMPLES -->
-    <section class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>🍓 Saladas Simples</h2>
-          <small>Personalize seu copo, frutas e adicionais</small>
-        </div>
-      </div>
-      <button type="button" class="btn-primary" onclick="abrirMontadorSalada()">
-        ➕ Monte sua Salada Simples
-      </button>
-    </section>
-
-    <!-- 2. SALADAS GOURMET -->
-    <section class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>✨ Saladas Gourmet</h2>
-          <small>Opções prontas e cremosas</small>
-        </div>
-      </div>
-      <div class="options-grid">
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Dulce Fit')">
-          <span>Dulce Fit</span>
-          <span class="price-tag">A partir de R$ 14,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Iogurte Natural')">
-          <span>Iogurte Natural</span>
-          <span class="price-tag">A partir de R$ 12,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Iogurte + Whey')">
-          <span>Iogurte + Whey</span>
-          <span class="price-tag">A partir de R$ 14,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Creme de Whey')">
-          <span>Creme de Whey</span>
-          <span class="price-tag">A partir de R$ 12,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Creme de Ninho')">
-          <span>Creme de Ninho</span>
-          <span class="price-tag">A partir de R$ 10,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirGourmetModal('Nutella')">
-          <span>Nutella</span>
-          <span class="price-tag">A partir de R$ 10,00</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- 3. SANDUÍCHES -->
-    <section class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>🥪 Sanduíches</h2>
-          <small>Selecione o sabor para escolher a modalidade (Unidade ou Semanal)</small>
-        </div>
-      </div>
-      <div class="options-grid">
-        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Sanduíche Natural', 7.00, null)">
-          <span>Sanduíche Natural</span>
-          <span class="price-tag">R$ 7,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Doce de Leite c/ Banana', 6.00, 23.00)">
-          <span>Doce de Leite c/ Banana</span>
-          <span class="price-tag">A partir de R$ 6,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Pasta de Amendoim c/ Banana', 6.00, 23.00)">
-          <span>Pasta de Amendoim c/ Banana</span>
-          <span class="price-tag">A partir de R$ 6,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Nutella c/ Banana', 7.00, 33.00)">
-          <span>Nutella c/ Banana</span>
-          <span class="price-tag">A partir de R$ 7,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Nutella c/ Morango e Castanha', 12.00, 50.00)">
-          <span>Nutella c/ Morango e Castanha</span>
-          <span class="price-tag">A partir de R$ 12,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="abrirSanduicheModal('Doce de Leite Zero Lactose', 7.00, 25.00)">
-          <span>Doce de Leite Zero Lactose</span>
-          <span class="price-tag">A partir de R$ 7,00</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- 4. FRANGO DESFIADO -->
-    <section class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>🍗 Frango Desfiado</h2>
-          <small>Prático e saudável para suas refeições</small>
-        </div>
-      </div>
-      <div class="options-grid">
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Frango desfiado (Pote de 200g)', 12.00)">
-          <span>Pote de 200g</span>
-          <span class="price-tag">R$ 12,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Frango desfiado (Pote de 400g)', 22.00)">
-          <span>Pote de 400g</span>
-          <span class="price-tag">R$ 22,00</span>
-        </button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Frango desfiado (Pote de 500g)', 28.00)">
-          <span>Pote de 500g</span>
-          <span class="price-tag">R$ 28,00</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- 5. FRUTAS / PORÇÕES -->
-    <section class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>🍇 Frutas e Porções</h2>
-          <small>Porções congeladas, temperadas e por peso</small>
-        </div>
-      </div>
-      <div class="options-grid">
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Uva congelada (400ml)', 6.00)"><span>Uva congelada 400ml</span><span class="price-tag">R$ 6,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Uva congelada (500ml)', 8.00)"><span>Uva congelada 500ml</span><span class="price-tag">R$ 8,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Manga temperada (400ml)', 6.00)"><span>Manga temperada 400ml</span><span class="price-tag">R$ 6,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Manga temperada (500ml)', 8.00)"><span>Manga temperada 500ml</span><span class="price-tag">R$ 8,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Abacaxi temperado (400ml)', 6.00)"><span>Abacaxi temperado 400ml</span><span class="price-tag">R$ 6,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Abacaxi temperado (500ml)', 8.00)"><span>Abacaxi temperado 500ml</span><span class="price-tag">R$ 8,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Saquinho de castanha de caju', 3.00)"><span>Saquinho de castanha de caju</span><span class="price-tag">R$ 3,00</span></button>
-      </div>
-      <div style="margin-top: 15px;">
-        <button type="button" class="btn-primary" onclick="abrirSaladaPesoModal()">
-          ⚖️ Montar Salada por Peso (R$ 35,00/kg)
-        </button>
-      </div>
-    </section>
-
-    <!-- 6. BEBIDAS -->
-    <section class="card-section">
-      <div class="section-title">
-        <div>
-          <h2>🥤 Bebidas</h2>
-          <small>Sucos e bebidas refrescantes</small>
-        </div>
-      </div>
-      <div class="options-grid">
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco detox', 5.00)"><span>Suco detox</span><span class="price-tag">R$ 5,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco de uva integral', 7.00)"><span>Suco de uva integral</span><span class="price-tag">R$ 7,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Coca-Cola Zero', 5.00)"><span>Coca-Cola Zero</span><span class="price-tag">R$ 5,00</span></button>
-        <button type="button" class="opt-card" onclick="abrirAguaCocoModal()"><span>Água de Coco</span><span class="price-tag">A partir de R$ 6,00</span></button>
-        <button type="button" class="opt-card" onclick="abrirSucoModal()"><span>🧃 Suco Natural</span><span class="price-tag">A partir de R$ 7,00</span></button>
-      </div>
-    </section>
-
-    <!-- DADOS DE ENTREGA -->
-    <section class="card-section">
-      <div class="section-title">
-        <h2>📍 Forma de Recebimento e Dados</h2>
-      </div>
-
-      <div class="field">
-        <label for="tipoRecebimentoSelect">Tipo de Recebimento *</label>
-        <select id="tipoRecebimentoSelect" onchange="atualizarTaxaEntregaUI()">
-          <option value="Entrega">Entrega (Taxa: R$ 2,00)</option>
-          <option value="Retirada">Retirada no Local (Sem Taxa)</option>
-        </select>
-        <div id="avisoTaxaEntrega" style="font-size: 0.85rem; color: var(--primary-hover); font-weight: 600; margin-top: 6px;">
-          🛵 Taxa de entrega: R$ 2,00
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="nomeInput">Nome completo *</label>
-        <input type="text" id="nomeInput" placeholder="Ex: Maria Silva">
-      </div>
-      <div class="field">
-        <label for="telefoneInput">Telefone / WhatsApp</label>
-        <input type="text" id="telefoneInput" placeholder="Ex: (86) 99999-9999">
-      </div>
-      <div class="field" id="campoEnderecoWrap">
-        <label for="enderecoInput">Endereço de entrega *</label>
-        <input type="text" id="enderecoInput" placeholder="Ex: Rua das Flores, 123, Centro">
-      </div>
-
-      <div class="field" id="campoGpsWrap">
-        <label>Localização por GPS (Opcional)</label>
-        <button type="button" class="btn-location" onclick="obterLocalizacaoGPS()">
-          📍 Capturar Minha Localização Atual
-        </button>
-        <input type="hidden" id="localizacaoHidden">
-        <p class="location-status" id="locationStatus"></p>
-      </div>
-
-      <div class="field">
-        <label for="pagamentoSelect">Forma de pagamento *</label>
-        <select id="pagamentoSelect">
-          <option value="Pix">Pix</option>
-          <option value="Dinheiro">Dinheiro</option>
-          <option value="Cartão">Cartão (débito/crédito na entrega)</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="observacaoInput">Observações gerais</label>
-        <textarea id="observacaoInput" rows="2" maxlength="300" placeholder="Ex: Campainha quebrada, entregar na portaria..."></textarea>
-      </div>
-      <div class="msg-erro" id="erroDados">Preencha os campos obrigatórios e adicione pelo menos um item ao carrinho.</div>
-    </section>
-
-  </main>
-
-  <!-- BARRA INFERIOR DE TOTAL -->
-  <div class="total-bar">
-    <div class="total-info">
-      <span>Total do pedido</span>
-      <strong class="valor" id="totalValorBarra">R$ 0,00</strong>
-    </div>
-    <button type="button" class="btn-checkout" onclick="gerarPedido()">Finalizar Pedido</button>
-  </div>
-
-  <!-- MODAIS DE SELEÇÃO E OPÇÕES -->
-
-  <!-- MODAL SELEÇÃO DE SANDUÍCHE -->
-  <div class="modal" id="sanduicheModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3 id="sanduicheModalTitle">Sanduíche</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharSanduicheModal()">×</button>
-      </div>
-      <div class="field">
-        <label>Escolha a Modalidade:</label>
-        <div class="options-grid" id="sanduicheOptionsContainer"></div>
-      </div>
-      <div class="msg-erro" id="erroSanduiche">Selecione uma das opções acima.</div>
-      <button type="button" class="btn-primary" onclick="confirmarSanduiche()">Adicionar ao Carrinho</button>
-    </div>
-  </div>
-
-  <!-- MODAL SALADA POR PESO -->
-  <div class="modal" id="saladaPesoModal">
-    <div class="modal-box modal-lg">
-      <div class="modal-head">
-        <h3>⚖️ Salada por Peso (R$ 35,00/kg)</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharSaladaPesoModal()">×</button>
-      </div>
-      <p class="modal-subtitle">Escolha as frutas desejadas e informe a quantidade em gramas:</p>
-      <div class="peso-items-list" id="pesoFrutasList"></div>
-      <div class="peso-summary-box">
-        <div class="peso-summary-row"><span>Peso total:</span><strong id="pesoTotalGrams">0 g</strong></div>
-        <div class="peso-summary-row highlight"><span>Valor Estimado:</span><strong id="pesoTotalValor">R$ 0,00</strong></div>
-      </div>
-      <div class="msg-erro" id="erroSaladaPeso">Selecione e informe gramas válidas (mínimo de 50g no total).</div>
-      <button type="button" class="btn-primary" onclick="confirmarSaladaPeso()">Adicionar Salada por Peso ao Carrinho</button>
-    </div>
-  </div>
-
-  <!-- MODAL SALADA SIMPLES -->
-  <div class="modal" id="saladaModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>🍓 Salada Simples</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharSaladaModal()">×</button>
-      </div>
-      <div class="builder-grid">
-        <button type="button" class="builder-btn" onclick="abrirSubModal('copoSubModal')">
-          <span>🥤 Copo / Plano</span>
-          <small id="lblCopo">Escolher tamanho *</small>
-        </button>
-        <button type="button" class="builder-btn" onclick="abrirSubModal('frutaSubModal')">
-          <span>🍓 Frutas</span>
-          <small id="lblFrutas">Escolher frutas *</small>
-        </button>
-        <button type="button" class="builder-btn" onclick="abrirSubModal('adicionalSubModal')">
-          <span>🥣 Adicionais</span>
-          <small id="lblAdicionais">Opcional</small>
-        </button>
-      </div>
-      <div class="modal-qty-bar">
-        <span>Quantidade:</span>
-        <div class="qty-control">
-          <button type="button" class="qty-btn" onclick="alterarQtdMontador(-1)">-</button>
-          <span class="qty-val" id="montadorQtdVal">1</span>
-          <button type="button" class="qty-btn" onclick="alterarQtdMontador(1)">+</button>
-        </div>
-      </div>
-      <div class="msg-erro" id="erroMontador">Selecione o tamanho/plano do copo e pelo menos uma fruta.</div>
-      <button type="button" class="btn-primary" onclick="confirmarSaladaEAdicionar()">Adicionar Salada ao Carrinho</button>
-    </div>
-  </div>
-
-  <!-- SUBMODAIS SALADA SIMPLES -->
-  <div class="modal" id="copoSubModal">
-    <div class="modal-box">
-      <div class="modal-head"><h3>🥤 Escolha o Tamanho ou Plano</h3><button class="btn-close-modal" onclick="fecharSubModal('copoSubModal')">×</button></div>
-      <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;">Preço Unidade:</div>
-      <div class="options-grid">
-        <label class="opt-card"><input type="radio" name="tempCopo" value="250ml (Unid.)|4" onchange="atualizarLabelsSalada()"> 250ml <span class="price-tag">R$ 4,00</span></label>
-        <label class="opt-card"><input type="radio" name="tempCopo" value="400ml (Unid.)|6" onchange="atualizarLabelsSalada()"> 400ml <span class="price-tag">R$ 6,00</span></label>
-        <label class="opt-card"><input type="radio" name="tempCopo" value="500ml (Unid.)|8" onchange="atualizarLabelsSalada()"> 500ml <span class="price-tag">R$ 8,00</span></label>
-      </div>
-      <div style="margin: 12px 0 10px; font-weight: bold; font-size: 0.9rem;">Preço Semanal:</div>
-      <div class="options-grid">
-        <label class="opt-card"><input type="radio" name="tempCopo" value="250ml (Semanal)|18" onchange="atualizarLabelsSalada()"> 250ml <span class="price-tag">R$ 18,00</span></label>
-        <label class="opt-card"><input type="radio" name="tempCopo" value="400ml (Semanal)|25" onchange="atualizarLabelsSalada()"> 400ml <span class="price-tag">R$ 25,00</span></label>
-        <label class="opt-card"><input type="radio" name="tempCopo" value="500ml (Semanal)|35" onchange="atualizarLabelsSalada()"> 500ml <span class="price-tag">R$ 35,00</span></label>
-      </div>
-      <button class="btn-primary" style="margin-top: 15px;" onclick="fecharSubModal('copoSubModal')">Confirmar</button>
-    </div>
-  </div>
-
-  <div class="modal" id="frutaSubModal">
-    <div class="modal-box">
-      <div class="modal-head"><h3>🍓 Escolha as Frutas</h3><button class="btn-close-modal" onclick="fecharSubModal('frutaSubModal')">×</button></div>
-      <!-- Lista renderizada dinamicamente via JS a partir do catálogo central de frutas (app.js) -->
-      <div class="options-grid" id="frutasContainer"></div>
-      <button class="btn-primary" onclick="fecharSubModal('frutaSubModal')">Confirmar Frutas</button>
-    </div>
-  </div>
-
-  <div class="modal" id="adicionalSubModal">
-    <div class="modal-box">
-      <div class="modal-head"><h3>🥣 Adicionais</h3><button class="btn-close-modal" onclick="fecharSubModal('adicionalSubModal')">×</button></div>
-      <div class="options-grid" id="adicionaisContainer">
-        <label class="opt-card"><input type="checkbox" value="Chia" data-preco="2" onchange="atualizarLabelsSalada()"> Chia <span class="price-tag">+R$ 2,00</span></label>
-        <label class="opt-card"><input type="checkbox" value="Granola" data-preco="2" onchange="atualizarLabelsSalada()"> Granola <span class="price-tag">+R$ 2,00</span></label>
-        <label class="opt-card"><input type="checkbox" value="Aveia" data-preco="2" onchange="atualizarLabelsSalada()"> Aveia <span class="price-tag">+R$ 2,00</span></label>
-        <label class="opt-card"><input type="checkbox" value="Castanhas" data-preco="3" onchange="atualizarLabelsSalada()"> Castanhas <span class="price-tag">+R$ 3,00</span></label>
-      </div>
-      <button class="btn-primary" onclick="fecharSubModal('adicionalSubModal')">Confirmar Adicionais</button>
-    </div>
-  </div>
-
-  <!-- MODAL SALADA GOURMET -->
-  <div class="modal" id="gourmetModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3 id="gourmetModalTitle">✨ Salada Gourmet</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharGourmetModal()">×</button>
-      </div>
-      <div class="field">
-        <label>Escolha o Tamanho / Modalidade:</label>
-        <div class="options-grid" id="gourmetPrecosContainer"></div>
-      </div>
-      <div class="field">
-        <label>Escolha as Frutas:</label>
-        <!-- Lista renderizada dinamicamente via JS a partir do catálogo central de frutas (app.js) -->
-        <div class="options-grid" id="gourmetFrutasContainer"></div>
-      </div>
-      <div class="field">
-        <label>Acompanhamentos (Grátis, máx. 3):</label>
-        <div class="options-grid" id="gourmetAdicionaisContainer"></div>
-      </div>
-      <div class="msg-erro" id="erroGourmet">Selecione pelo menos uma fruta e o tamanho.</div>
-      <button type="button" class="btn-primary" onclick="confirmarSaladaGourmet()">Adicionar ao Carrinho</button>
-    </div>
-  </div>
-
-  <!-- MODAL ÁGUA DE COCO -->
-  <div class="modal" id="aguaCocoModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>🥥 Água de Coco</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharAguaCocoModal()">×</button>
-      </div>
-      <div class="field">
-        <label>Escolha o tamanho:</label>
-        <div class="options-grid" id="aguaCocoOptionsContainer"></div>
-      </div>
-      <div class="msg-erro" id="erroAguaCoco">Selecione um tamanho.</div>
-      <button type="button" class="btn-primary" onclick="confirmarAguaCoco()">Adicionar ao Carrinho</button>
-    </div>
-  </div>
-
-  <!-- MODAL SUCO NATURAL -->
-  <div class="modal" id="sucoModal">
-    <div class="modal-box">
-      <div class="modal-head">
-        <h3>🧃 Suco Natural</h3>
-        <button type="button" class="btn-close-modal" onclick="fecharSucoModal()">×</button>
-      </div>
-      <div class="field">
-        <label>Escolha o tamanho:</label>
-        <div class="options-grid" id="sucoTamanhoContainer"></div>
-      </div>
-      <div class="field">
-        <label>Escolha o sabor:</label>
-        <div class="options-grid" id="sucoSaborContainer"></div>
-      </div>
-      <div class="field">
-        <label>Escolha a fruta:</label>
-        <div class="options-grid" id="sucoFrutaContainer"></div>
-      </div>
-      <div class="msg-erro" id="erroSuco">Selecione o tamanho, o sabor e a fruta.</div>
-      <button type="button" class="btn-primary" onclick="confirmarSuco()">Adicionar ao Carrinho</button>
-    </div>
-  </div>
-
-  <!-- TELA FINAL DE RESULTADO -->
-  <div id="resultado">
-    <div class="resumo-box" id="resumoTexto"></div>
-    <div class="acoes">
-      <button class="btn-whats" id="btnWhats">Enviar no WhatsApp</button>
-      <button class="btn-secondary" onclick="voltar()">Editar pedido</button>
-    </div>
-    <div class="qr-box" id="qrArea"></div>
-  </div>
-  <p class="envio-status" id="envioStatus"></p>
-<!-- Botão de acesso ao Admin -->
-<button type="button" onclick="acessarAdmin()" class="btn-admin-acesso">
-  ⚙️ Área do Admin
-</button>
-<!-- Botão Acessível de Pedido Direto via WhatsApp 
- 
-<div style="padding: 15px; text-align: center;">
-  <button type="button" onclick="abrirWhatsAppDireto()" style="
-    background-color: #25D366;
-    color: white;
-    font-size: 1.25rem;
-    font-weight: bold;
-    padding: 16px 28px;
-    border: none;
-    border-radius: 50px;
-    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
-    cursor: pointer;
-    width: 100%;
-    max-width: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin: 0 auto;
-  ">
-    <span style="font-size: 1.5rem;">💬</span> Pedir pelo WhatsApp
-  </button>
-</div>
--->
+</main>
 
 
-  <!-- ORDEM CORRIGIDA DOS SCRIPTS -->
-  <script src="app.js"></script>
-  <script src="pedidos.js"></script>
-  
-</body>
-</html>
+<!-- JavaScript -->
+<script src="app.js"></script>
+
+</body> </html>
