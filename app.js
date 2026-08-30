@@ -64,14 +64,72 @@ const SACOLAO_DADOS = [
   }
 ];
 
-const FRUTAS_DISPONIVEIS_PESO = [
-  "Morango 🍓", "Banana 🍌", "Maçã 🍎", "Uva 🍇", "Kiwi 🥝",
-  "Manga 🥭", "Abacaxi 🍍", "Mamão 🍑", "Melancia 🍉", "Melão 🍈"
-];
-
 const ADICIONAIS_DISPONIVEIS = [
   "Granola", "Leite em Pó", "Mel", "Chia", "Aveia", "Gotas de Chocolate", "Coco Ralado"
 ];
+
+// ===================== CATÁLOGO CENTRAL DE FRUTAS =====================
+// Fonte ÚNICA de frutas do sistema. Usada por: Salada Simples, Salada Gourmet,
+// Salada por Peso, Suco Natural e Painel Admin. Para adicionar uma nova fruta,
+// basta incluir um novo objeto aqui (ou pelo Painel Admin) — ela aparecerá
+// automaticamente em todos os lugares que usam o catálogo.
+// tipoPreco: "normal" | "especial" — hoje só o Morango é "especial", mas a
+// regra NÃO fica presa ao nome "Morango": qualquer fruta marcada como
+// "especial" passa a usar as regras de preço especial (item 7 do briefing).
+const CATALOGO_FRUTAS_PADRAO = [
+  { nome: "Morango",  emoji: "🍓", ativo: true, tipoPreco: "especial" },
+  { nome: "Banana",   emoji: "🍌", ativo: true, tipoPreco: "normal" },
+  { nome: "Maçã",     emoji: "🍎", ativo: true, tipoPreco: "normal" },
+  { nome: "Uva",      emoji: "🍇", ativo: true, tipoPreco: "normal" },
+  { nome: "Kiwi",     emoji: "🥝", ativo: true, tipoPreco: "normal" },
+  { nome: "Manga",    emoji: "🥭", ativo: true, tipoPreco: "normal" },
+  { nome: "Abacaxi",  emoji: "🍍", ativo: true, tipoPreco: "normal" },
+  { nome: "Mamão",    emoji: "🍑", ativo: true, tipoPreco: "normal" },
+  { nome: "Melancia", emoji: "🍉", ativo: true, tipoPreco: "normal" },
+  { nome: "Melão",    emoji: "🍈", ativo: true, tipoPreco: "normal" }
+];
+
+const SABORES_SUCO_NATURAL = ["Normal", "Com Leite"];
+
+// ===================== CONFIGURAÇÃO CENTRAL DE PREÇOS =====================
+// TODOS os valores editáveis pelo Admin ficam aqui dentro. O Painel Admin lê e
+// grava neste mesmo formato (ver admin.js). Para alterar um preço "na unha"
+// (sem usar o Admin), basta editar os valores abaixo.
+const CONFIG_PRECOS_PADRAO = {
+  // Limite de acompanhamentos grátis (item 5 do briefing)
+  maxAcompanhamentos: 3,
+
+  // Salada por Peso — preço por grama (item 8)
+  precoPorGramaPadrao: 0.035,   // demais frutas (equivalente a R$ 35,00/kg, valor já usado antes)
+  precoPorGramaEspecial: 0.05, // frutas com tipoPreco "especial" (hoje: Morango) — R$ 0,05/g
+
+  // Água de Coco (item 1)
+  aguaDeCoco: {
+    "200ml": 6.00,
+    "500ml": 8.00
+  },
+
+  // Suco Natural (item 2)
+  sucoNatural: {
+    "300ml": 7.00,
+    "500ml": 9.00
+  },
+
+  // Salada Simples — preço especial quando a ÚNICA fruta escolhida é uma
+  // fruta "especial" (item 6). Chave = mesmo rótulo usado no seletor de
+  // tamanho/plano (ver copoSubModal em index.html).
+  // Valor obrigatório do briefing: 400ml (Unid.) = R$ 12,00.
+  // Os demais valores abaixo são estimativas de referência — ajuste-os no
+  // Painel Admin (ou aqui) quando tiver os valores definitivos.
+  saladaSimplesFrutaEspecial: {
+    "250ml (Unid.)": 9.00,
+    "400ml (Unid.)": 12.00,
+    "500ml (Unid.)": 15.00,
+    "250ml (Semanal)": 22.00,
+    "400ml (Semanal)": 30.00,
+    "500ml (Semanal)": 40.00
+  }
+};
 
 let carrinho = [];
 let montadorQtd = 1;
@@ -79,6 +137,8 @@ let gourmetTipoAtual = '';
 let sacolaoQtds = {};
 window.pedidoAtualId = null;
 window.estoqueAtual = null;
+window.catalogoFrutasAtual = null;
+window.configPrecosAtual = null;
 
 // Busca o estoque/disponibilidade atual no servidor (planilha). Isso é o que
 // garante que a disponibilidade definida pelo Admin apareça para TODOS os
@@ -104,9 +164,85 @@ function carregarEstoqueDoServidor() {
     });
 }
 
+// Busca no servidor o catálogo de frutas e a configuração de preços definidos
+// pelo Admin (mesma lógica/mesmo endpoint usado para o estoque). Enquanto não
+// há resposta do servidor (ou se a rede falhar), usa o cache local e, por
+// último, os valores padrão definidos acima.
+function carregarConfigGeralDoServidor() {
+  if (!CONFIG.apiUrl) return Promise.resolve(null);
+
+  return fetch(`${CONFIG.apiUrl}?action=configGeral`)
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.ok) {
+        if (Array.isArray(data.catalogoFrutas) && data.catalogoFrutas.length) {
+          window.catalogoFrutasAtual = data.catalogoFrutas;
+          localStorage.setItem('frutue_catalogo_frutas', JSON.stringify(data.catalogoFrutas));
+        }
+        if (data.configPrecos) {
+          window.configPrecosAtual = data.configPrecos;
+          localStorage.setItem('frutue_config_precos', JSON.stringify(data.configPrecos));
+        }
+      }
+      return { catalogo: window.catalogoFrutasAtual, precos: window.configPrecosAtual };
+    })
+    .catch(err => {
+      console.warn('[Frutue][config] Falha ao buscar configuração do servidor, usando cache local (se houver).', err);
+      const cacheFrutas = localStorage.getItem('frutue_catalogo_frutas');
+      const cachePrecos = localStorage.getItem('frutue_config_precos');
+      window.catalogoFrutasAtual = cacheFrutas ? JSON.parse(cacheFrutas) : window.catalogoFrutasAtual;
+      window.configPrecosAtual = cachePrecos ? JSON.parse(cachePrecos) : window.configPrecosAtual;
+      return { catalogo: window.catalogoFrutasAtual, precos: window.configPrecosAtual };
+    });
+}
+
+function obterCatalogoFrutas() {
+  if (window.catalogoFrutasAtual) return window.catalogoFrutasAtual;
+  const salvo = localStorage.getItem('frutue_catalogo_frutas');
+  return salvo ? JSON.parse(salvo) : CATALOGO_FRUTAS_PADRAO;
+}
+
+function obterFrutasAtivas() {
+  return obterCatalogoFrutas().filter(f => f.ativo !== false);
+}
+
+function obterConfigPrecos() {
+  if (window.configPrecosAtual) return window.configPrecosAtual;
+  const salvo = localStorage.getItem('frutue_config_precos');
+  // Faz merge raso com o padrão para garantir que chaves novas (adicionadas
+  // em atualizações futuras) sempre tenham um valor, mesmo que o cache salvo
+  // seja antigo.
+  const base = salvo ? JSON.parse(salvo) : {};
+  return Object.assign({}, CONFIG_PRECOS_PADRAO, base);
+}
+
+// Renderiza uma lista de checkboxes (ou radios) de frutas dentro de um
+// container, sempre a partir do catálogo central de frutas ATIVAS. Assim,
+// Salada Simples, Salada Gourmet e Suco Natural nunca ficam com listas
+// divergentes ou desatualizadas.
+function renderizarFrutasContainer(containerId, tipoInput, nomeGrupoRadio) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const frutas = obterFrutasAtivas();
+
+  container.innerHTML = frutas.map(f => {
+    const inputAttrs = tipoInput === 'radio'
+      ? `type="radio" name="${nomeGrupoRadio}"`
+      : `type="checkbox"`;
+    return `
+      <label class="opt-card">
+        <input ${inputAttrs} value="${f.nome}">
+        ${f.nome} ${f.emoji || ''}
+      </label>
+    `;
+  }).join('');
+}
+
 // ===================== INICIALIZAÇÃO =====================
 document.addEventListener('DOMContentLoaded', () => {
-  renderizarListaFrutasPeso();
+  carregarConfigGeralDoServidor().then(() => {
+    renderizarListaFrutasPeso();
+  });
   // renderizarSacolao(); // Removido para evitar Uncaught ReferenceError
   carregarEstoqueDoServidor().then(() => aplicarDisponibilidadeEstoque());
   atualizarCarrinhoUI();
@@ -429,18 +565,32 @@ function fecharSaladaPesoModal() {
   document.getElementById('saladaPesoModal').classList.remove('show');
 }
 
+// Preço por grama de uma fruta específica, considerando a regra de preço
+// especial (item 7/8 do briefing). Não fica presa ao nome "Morango": qualquer
+// fruta marcada como tipoPreco "especial" no catálogo usa esse valor.
+function obterPrecoPorGrama(nomeFruta) {
+  const config = obterConfigPrecos();
+  const fruta = obterCatalogoFrutas().find(f => normalizarNomeProduto(f.nome) === normalizarNomeProduto(nomeFruta));
+  if (fruta && fruta.tipoPreco === 'especial') {
+    return config.precoPorGramaEspecial;
+  }
+  return config.precoPorGramaPadrao;
+}
+
 function renderizarListaFrutasPeso() {
   const container = document.getElementById('pesoFrutasList');
   if (!container) return;
   container.innerHTML = '';
 
-  FRUTAS_DISPONIVEIS_PESO.forEach((fruta, idx) => {
+  const frutas = obterFrutasAtivas();
+
+  frutas.forEach((fruta, idx) => {
     const row = document.createElement('div');
     row.className = 'peso-item-row';
     row.innerHTML = `
       <label class="peso-item-label" for="pesoFruta_${idx}">
-        <input type="checkbox" id="pesoFruta_${idx}" value="${fruta}" onchange="togglePesoInput(${idx}); calcularTotalSaladaPeso();">
-        <span>${fruta}</span>
+        <input type="checkbox" id="pesoFruta_${idx}" data-fruta-nome="${fruta.nome}" value="${fruta.nome} ${fruta.emoji || ''}" onchange="togglePesoInput(${idx}); calcularTotalSaladaPeso();">
+        <span>${fruta.nome} ${fruta.emoji || ''}</span>
       </label>
       <div class="peso-item-input-wrap">
         <input type="number" id="pesoGramas_${idx}" min="0" step="10" placeholder="0" disabled oninput="calcularTotalSaladaPeso()">
@@ -459,19 +609,19 @@ function togglePesoInput(idx) {
 }
 
 function calcularTotalSaladaPeso() {
-  const precoPorKg = 35.00;
+  const frutas = obterFrutasAtivas();
   let pesoTotalGramos = 0;
+  let valorTotal = 0;
 
-  FRUTAS_DISPONIVEIS_PESO.forEach((_, idx) => {
+  frutas.forEach((fruta, idx) => {
     const chk = document.getElementById(`pesoFruta_${idx}`);
     const input = document.getElementById(`pesoGramas_${idx}`);
     if (chk && chk.checked) {
       const val = parseFloat(input.value) || 0;
       pesoTotalGramos += val;
+      valorTotal += val * obterPrecoPorGrama(fruta.nome);
     }
   });
-
-  const valorTotal = (pesoTotalGramos / 1000) * precoPorKg;
 
   document.getElementById('pesoTotalGrams').textContent = `${pesoTotalGramos} g`;
   document.getElementById('pesoTotalValor').textContent = `R$ ${valorTotal.toFixed(2).replace('.', ',')}`;
@@ -481,15 +631,16 @@ function calcularTotalSaladaPeso() {
 
 function confirmarSaladaPeso() {
   const { pesoTotalGramos, valorTotal } = calcularTotalSaladaPeso();
+  const frutas = obterFrutasAtivas();
   let detalheFrutas = [];
 
-  FRUTAS_DISPONIVEIS_PESO.forEach((fruta, idx) => {
+  frutas.forEach((fruta, idx) => {
     const chk = document.getElementById(`pesoFruta_${idx}`);
     const input = document.getElementById(`pesoGramas_${idx}`);
     if (chk && chk.checked) {
       const val = parseFloat(input.value) || 0;
       if (val > 0) {
-        detalheFrutas.push(`${fruta.replace(/[\u{1F300}-\u{1F6FF}]/gu, '').trim()}: ${val}g`);
+        detalheFrutas.push(`${fruta.nome}: ${val}g`);
       }
     }
   });
@@ -508,7 +659,7 @@ function confirmarSaladaPeso() {
     qtd: 1
   });
 
-  FRUTAS_DISPONIVEIS_PESO.forEach((_, idx) => {
+  frutas.forEach((_, idx) => {
     const chk = document.getElementById(`pesoFruta_${idx}`);
     const input = document.getElementById(`pesoGramas_${idx}`);
     if (chk) chk.checked = false;
@@ -526,9 +677,14 @@ function abrirMontadorSalada() {
   document.getElementById('montadorQtdVal').textContent = montadorQtd;
   document.querySelectorAll('#saladaModal input[type="radio"]').forEach(r => r.checked = false);
   document.querySelectorAll('#saladaModal input[type="checkbox"]').forEach(c => c.checked = false);
-  
+
+  renderizarFrutasContainer('frutasContainer', 'checkbox');
+  document.querySelectorAll('#frutasContainer input').forEach(inp => {
+    inp.setAttribute('onchange', 'atualizarLabelsSalada()');
+  });
+
   renderizarAdicionaisGratuitos('adicionaisContainer');
-  
+
   atualizarLabelsSalada();
   document.getElementById('erroMontador').style.display = 'none';
   document.getElementById('saladaModal').classList.add('show');
@@ -559,11 +715,27 @@ function renderizarAdicionaisGratuitos(containerId) {
   if (!container) return;
   container.innerHTML = ADICIONAIS_DISPONIVEIS.map(adc => `
     <label class="opt-card">
-      <input type="checkbox" value="${adc}">
+      <input type="checkbox" value="${adc}" onchange="verificarLimiteAcompanhamentos('${containerId}', this)">
       <span>${adc}</span>
       <span class="price-tag" style="color:#2e7d32; font-weight:bold;">Grátis</span>
     </label>
   `).join('');
+}
+
+// Limite central de acompanhamentos (item 5 do briefing). O valor máximo vem
+// da configuração central (obterConfigPrecos().maxAcompanhamentos), então
+// para mudar o limite basta alterar essa configuração — nada fica "solto" no
+// código. Bloqueia a 4ª seleção e mostra uma mensagem clara ao cliente.
+function verificarLimiteAcompanhamentos(containerId, inputAlterado) {
+  const max = obterConfigPrecos().maxAcompanhamentos || 3;
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const marcados = container.querySelectorAll('input:checked').length;
+  if (inputAlterado.checked && marcados > max) {
+    inputAlterado.checked = false;
+    alert(`Você pode escolher no máximo ${max} acompanhamentos.`);
+  }
 }
 
 function atualizarLabelsSalada() {
@@ -587,7 +759,20 @@ function confirmarSaladaEAdicionar() {
   document.getElementById('erroMontador').style.display = 'none';
 
   const [tamanhoLabel, precoCopo] = copoSel.value.split('|');
-  const precoUnitario = parseFloat(precoCopo);
+  let precoUnitario = parseFloat(precoCopo);
+
+  // Regra do item 6/7: se a ÚNICA fruta escolhida for uma fruta "especial"
+  // (hoje, Morango), usa o preço especial configurado para esse tamanho.
+  if (frutasSel.length === 1) {
+    const catalogo = obterCatalogoFrutas();
+    const frutaObj = catalogo.find(f => normalizarNomeProduto(f.nome) === normalizarNomeProduto(frutasSel[0]));
+    if (frutaObj && frutaObj.tipoPreco === 'especial') {
+      const precosEspeciais = obterConfigPrecos().saladaSimplesFrutaEspecial || {};
+      if (precosEspeciais[tamanhoLabel] != null) {
+        precoUnitario = precosEspeciais[tamanhoLabel];
+      }
+    }
+  }
 
   const adicionaisSel = [...document.querySelectorAll('#adicionaisContainer input:checked')].map(a => a.value);
 
@@ -626,8 +811,10 @@ function abrirGourmetModal(tipo) {
     </label>
   `;
 
-  document.querySelectorAll('#gourmetFrutasContainer input').forEach(c => c.checked = false);
-  
+  // Corrige o bug de mostrar só 5 frutas: renderiza TODAS as frutas ativas
+  // do catálogo central (item 3 do briefing), sempre já desmarcadas.
+  renderizarFrutasContainer('gourmetFrutasContainer', 'checkbox');
+
   renderizarAdicionaisGratuitos('gourmetAdicionaisContainer');
 
   aplicarDisponibilidadeEstoque();
@@ -718,6 +905,102 @@ function confirmarSanduiche() {
 
   adicionarItemDireto(nomeItem, preco);
   fecharSanduicheModal();
+}
+
+// ===================== ÁGUA DE COCO (item 1 do briefing) =====================
+// Preços centralizados em CONFIG_PRECOS_PADRAO.aguaDeCoco / obterConfigPrecos().
+function abrirAguaCocoModal() {
+  const precos = obterConfigPrecos().aguaDeCoco || {};
+  const container = document.getElementById('aguaCocoOptionsContainer');
+
+  container.innerHTML = Object.keys(precos).map((tamanho, idx) => `
+    <label class="opt-card">
+      <input type="radio" name="aguaCocoOpt" value="${tamanho}|${precos[tamanho]}" ${idx === 0 ? 'checked' : ''}>
+      <span>${tamanho}</span>
+      <span class="price-tag">R$ ${Number(precos[tamanho]).toFixed(2).replace('.', ',')}</span>
+    </label>
+  `).join('');
+
+  document.getElementById('erroAguaCoco').style.display = 'none';
+  aplicarDisponibilidadeEstoque();
+  document.getElementById('aguaCocoModal').classList.add('show');
+}
+
+function fecharAguaCocoModal() {
+  document.getElementById('aguaCocoModal').classList.remove('show');
+}
+
+function confirmarAguaCoco() {
+  const selecionado = document.querySelector('input[name="aguaCocoOpt"]:checked');
+  if (!selecionado) {
+    document.getElementById('erroAguaCoco').style.display = 'block';
+    return;
+  }
+  const [tamanho, precoStr] = selecionado.value.split('|');
+  adicionarItemDireto(`Água de Coco (${tamanho})`, parseFloat(precoStr));
+  fecharAguaCocoModal();
+}
+
+// ===================== SUCO NATURAL (item 2 do briefing) =====================
+// Usa o MESMO catálogo central de frutas (nenhuma lista separada é criada).
+// Preços centralizados em CONFIG_PRECOS_PADRAO.sucoNatural / obterConfigPrecos().
+function abrirSucoModal() {
+  const precos = obterConfigPrecos().sucoNatural || {};
+
+  const containerTamanho = document.getElementById('sucoTamanhoContainer');
+  containerTamanho.innerHTML = Object.keys(precos).map((tamanho, idx) => `
+    <label class="opt-card">
+      <input type="radio" name="sucoTamanho" value="${tamanho}|${precos[tamanho]}" ${idx === 0 ? 'checked' : ''}>
+      <span>${tamanho}</span>
+      <span class="price-tag">R$ ${Number(precos[tamanho]).toFixed(2).replace('.', ',')}</span>
+    </label>
+  `).join('');
+
+  const containerSabor = document.getElementById('sucoSaborContainer');
+  containerSabor.innerHTML = SABORES_SUCO_NATURAL.map((sabor, idx) => `
+    <label class="opt-card">
+      <input type="radio" name="sucoSabor" value="${sabor}" ${idx === 0 ? 'checked' : ''}>
+      <span>${sabor}</span>
+    </label>
+  `).join('');
+
+  // Mesmo catálogo central de frutas usado em toda a aplicação.
+  renderizarFrutasContainer('sucoFrutaContainer', 'radio', 'sucoFruta');
+
+  document.getElementById('erroSuco').style.display = 'none';
+  aplicarDisponibilidadeEstoque();
+  document.getElementById('sucoModal').classList.add('show');
+}
+
+function fecharSucoModal() {
+  document.getElementById('sucoModal').classList.remove('show');
+}
+
+function confirmarSuco() {
+  const tamanhoSel = document.querySelector('input[name="sucoTamanho"]:checked');
+  const saborSel = document.querySelector('input[name="sucoSabor"]:checked');
+  const frutaSel = document.querySelector('input[name="sucoFruta"]:checked');
+
+  if (!tamanhoSel || !saborSel || !frutaSel) {
+    document.getElementById('erroSuco').style.display = 'block';
+    return;
+  }
+  document.getElementById('erroSuco').style.display = 'none';
+
+  const [tamanho, precoStr] = tamanhoSel.value.split('|');
+  const precoUnitario = parseFloat(precoStr);
+
+  carrinho.push({
+    id: Date.now() + Math.random(),
+    nome: `Suco Natural (${tamanho})`,
+    detalhes: `Sabor: ${saborSel.value}<br>Fruta: ${frutaSel.value}`,
+    precoUnitario: precoUnitario,
+    qtd: 1
+  });
+
+  atualizarCarrinhoUI();
+  fecharSucoModal();
+  toggleCartDrawer(true);
 }
 
 // ===================== BOTÃO DIRETO WHATSAPP =====================

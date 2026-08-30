@@ -199,8 +199,8 @@
         <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco detox', 5.00)"><span>Suco detox</span><span class="price-tag">R$ 5,00</span></button>
         <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco de uva integral', 7.00)"><span>Suco de uva integral</span><span class="price-tag">R$ 7,00</span></button>
         <button type="button" class="opt-card" onclick="adicionarItemDireto('Coca-Cola Zero', 5.00)"><span>Coca-Cola Zero</span><span class="price-tag">R$ 5,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Água de coco', 6.00)"><span>Água de coco</span><span class="price-tag">R$ 6,00</span></button>
-        <button type="button" class="opt-card" onclick="adicionarItemDireto('Suco de laranja', 7.00)"><span>Suco de laranja</span><span class="price-tag">R$ 7,00</span></button>
+        <button type="button" class="opt-card" onclick="abrirAguaCocoModal()"><span>Água de Coco</span><span class="price-tag">A partir de R$ 6,00</span></button>
+        <button type="button" class="opt-card" onclick="abrirSucoModal()"><span>🧃 Suco Natural</span><span class="price-tag">A partir de R$ 7,00</span></button>
       </div>
     </section>
 
@@ -362,18 +362,8 @@
   <div class="modal" id="frutaSubModal">
     <div class="modal-box">
       <div class="modal-head"><h3>🍓 Escolha as Frutas</h3><button class="btn-close-modal" onclick="fecharSubModal('frutaSubModal')">×</button></div>
-      <div class="options-grid" id="frutasContainer">
-        <label class="opt-card"><input type="checkbox" value="Morango" onchange="atualizarLabelsSalada()"> Morango 🍓</label>
-        <label class="opt-card"><input type="checkbox" value="Banana" onchange="atualizarLabelsSalada()"> Banana 🍌</label>
-        <label class="opt-card"><input type="checkbox" value="Maçã" onchange="atualizarLabelsSalada()"> Maçã 🍎</label>
-        <label class="opt-card"><input type="checkbox" value="Uva" onchange="atualizarLabelsSalada()"> Uva 🍇</label>
-        <label class="opt-card"><input type="checkbox" value="Kiwi" onchange="atualizarLabelsSalada()"> Kiwi 🥝</label>
-        <label class="opt-card"><input type="checkbox" value="Manga" onchange="atualizarLabelsSalada()"> Manga 🥭</label>
-        <label class="opt-card"><input type="checkbox" value="Abacaxi" onchange="atualizarLabelsSalada()"> Abacaxi 🍍</label>
-        <label class="opt-card"><input type="checkbox" value="Mamão" onchange="atualizarLabelsSalada()"> Mamão 🍑</label>
-        <label class="opt-card"><input type="checkbox" value="Melancia" onchange="atualizarLabelsSalada()"> Melancia 🍉</label>
-        <label class="opt-card"><input type="checkbox" value="Melão" onchange="atualizarLabelsSalada()"> Melão 🍈</label>
-      </div>
+      <!-- Lista renderizada dinamicamente via JS a partir do catálogo central de frutas (app.js) -->
+      <div class="options-grid" id="frutasContainer"></div>
       <button class="btn-primary" onclick="fecharSubModal('frutaSubModal')">Confirmar Frutas</button>
     </div>
   </div>
@@ -404,17 +394,55 @@
       </div>
       <div class="field">
         <label>Escolha as Frutas:</label>
-        <div class="options-grid" id="gourmetFrutasContainer">
-          <label class="opt-card"><input type="checkbox" value="Morango"> Morango 🍓</label>
-          <label class="opt-card"><input type="checkbox" value="Banana"> Banana 🍌</label>
-          <label class="opt-card"><input type="checkbox" value="Maçã"> Maçã 🍎</label>
-          <label class="opt-card"><input type="checkbox" value="Uva"> Uva 🍇</label>
-          <label class="opt-card"><input type="checkbox" value="Kiwi"> Kiwi 🥝</label>
-          <label class="opt-card"><input type="checkbox" value="Manga"> Manga 🥭</label>
-        </div>
+        <!-- Lista renderizada dinamicamente via JS a partir do catálogo central de frutas (app.js) -->
+        <div class="options-grid" id="gourmetFrutasContainer"></div>
+      </div>
+      <div class="field">
+        <label>Acompanhamentos (Grátis, máx. 3):</label>
+        <div class="options-grid" id="gourmetAdicionaisContainer"></div>
       </div>
       <div class="msg-erro" id="erroGourmet">Selecione pelo menos uma fruta e o tamanho.</div>
       <button type="button" class="btn-primary" onclick="confirmarSaladaGourmet()">Adicionar ao Carrinho</button>
+    </div>
+  </div>
+
+  <!-- MODAL ÁGUA DE COCO -->
+  <div class="modal" id="aguaCocoModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>🥥 Água de Coco</h3>
+        <button type="button" class="btn-close-modal" onclick="fecharAguaCocoModal()">×</button>
+      </div>
+      <div class="field">
+        <label>Escolha o tamanho:</label>
+        <div class="options-grid" id="aguaCocoOptionsContainer"></div>
+      </div>
+      <div class="msg-erro" id="erroAguaCoco">Selecione um tamanho.</div>
+      <button type="button" class="btn-primary" onclick="confirmarAguaCoco()">Adicionar ao Carrinho</button>
+    </div>
+  </div>
+
+  <!-- MODAL SUCO NATURAL -->
+  <div class="modal" id="sucoModal">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h3>🧃 Suco Natural</h3>
+        <button type="button" class="btn-close-modal" onclick="fecharSucoModal()">×</button>
+      </div>
+      <div class="field">
+        <label>Escolha o tamanho:</label>
+        <div class="options-grid" id="sucoTamanhoContainer"></div>
+      </div>
+      <div class="field">
+        <label>Escolha o sabor:</label>
+        <div class="options-grid" id="sucoSaborContainer"></div>
+      </div>
+      <div class="field">
+        <label>Escolha a fruta:</label>
+        <div class="options-grid" id="sucoFrutaContainer"></div>
+      </div>
+      <div class="msg-erro" id="erroSuco">Selecione o tamanho, o sabor e a fruta.</div>
+      <button type="button" class="btn-primary" onclick="confirmarSuco()">Adicionar ao Carrinho</button>
     </div>
   </div>
 
@@ -455,8 +483,7 @@
     <span style="font-size: 1.5rem;">💬</span> Pedir pelo WhatsApp
   </button>
 </div>
-<div id="gourmetAdicionaisContainer" class="opt-grid"></div>
-  
+
   <!-- ORDEM CORRIGIDA DOS SCRIPTS -->
   <script src="app.js"></script>
   <script src="pedidos.js"></script>
