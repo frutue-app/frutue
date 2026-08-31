@@ -5,7 +5,7 @@ const CONFIG = {
   pixNomeRecebedor: "Francisco das Chagas Gomes", //
   pixCidade: "PEDRO II",
   taxaEntrega: 2.00,
-  apiUrl: "https://script.google.com/macros/s/AKfycbxHTowPSlJ_fvKNFYJprhugOyLBhdA4rdvUWjz4wWFWCVDx-Jbwdr71aO7Q2vee7pxWNw/exec"
+  apiUrl: "https://script.google.com/macros/s/AKfycbyYemX4Atc_8xtBUtYeTjmJq_XRxfAsodRnfQfHf3-ZMgEZLVWUyLGNitmDJNQVo2uo/exec"
 };
 
 // PREÇOS SALADA GOURMET
